@@ -1,0 +1,31 @@
+<?php
+// $Id$
+
+function persistent_login_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {persistent_login} (".
+	       "rnd char(32) NOT NULL, ".
+	       "uid int unsigned NOT NULL, ".
+	       "expires int unsigned NOT NULL, ".
+	       "PRIMARY KEY (rnd), ".
+	       "INDEX (uid), ".
+	       "INDEX (expires) ".
+	       ") /*!40100 DEFAULT CHARACTER SET utf8 */;"
+	       );
+      break;
+      
+  case 'pgsql':
+      db_query("CREATE TABLE {persistent_login} (".
+	       "rnd char(32) NOT NULL, ".
+	       "uid integer unsigned NOT NULL, ".
+	       "expires integer unsigned NOT NULL, ".
+	       "PRIMARY KEY (rnd) ".
+	       "INDEX (uid), ".
+	       "INDEX (expires), ".
+	       ")"
+	       );
+      break;
+  }
+}
