@@ -89,16 +89,27 @@ function persistent_login_settings() {
  * Implementation of hook_form_alter().
  */
 function persistent_login_form_alter($form_id, &$form) {
-  $element = array
-    ('#type' => 'checkbox',
-     '#title' => t('Remember me'));
-  if ($_SESSION['persistent_login_auto'])
-    $element['#default_value'] = 1;
-  unset($_SESSION['persistent_login_auto']);
+  if (substr($form_id, 0, 10) == 'user_login') {
+    $element = array
+      ('#type' => 'checkbox',
+       '#title' => t('Remember me'));
+    if ($_SESSION['persistent_login_auto']) {
+      $element['#default_value'] = 1;
+    }
+    unset($_SESSION['persistent_login_auto']);
+    
+    if ($_SESSION['persistent_login_default_user']) {
+      $defname = $_SESSION['persistent_login_default_user'];
+    }
+    unset($_SESSION['persistent_login_default_user']);
+  }
 
   if ($form_id == 'user_login') {
     $form['persistent_login'] = $element;
+    $form['name']['#default_value'] = $defname;
   } else if ($form_id == 'user_login_block') {
+    $form['name']['#default_value'] = $defname;
+
     /* there must be a better way! */
     $tmp = $form;
     $form = array();
@@ -199,6 +210,7 @@ function persistent_login_init() {
     $path = $_GET['q'];
     $page_match = _persistent_login_match($path);
     if ($page_match) {
+      $_SESSION['persistent_login_default_user'] = $user->name;
       $user = user_load(array('uid' => 0));
       $_SESSION['persistent_login_check'] = FALSE;
       $_SESSION['persistent_login_login'] = FALSE;
