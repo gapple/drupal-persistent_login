@@ -7,7 +7,7 @@ global $base_path;
 define('PERSISTENT_LOGIN_COOKIE', 
        'PERSISTENT_LOGIN_'.preg_replace('/[^a-zA-Z0-9_]/', '_', $base_path));
 define('PERSISTENT_LOGIN_SECURE_PATHS',
-       "user/*/edit\nuser/*/address\n".
+       "user/*/*\nuser/*/address\n".
        "cart/checkout\n".
        "admin/settings/persistent_login\n");
 define('PERSISTENT_LOGIN_MAXLIFE', 30);
