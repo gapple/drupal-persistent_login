@@ -71,8 +71,7 @@ function persistent_login_settings() {
     '#title' => t('Pages which require an explicit login'),
     '#default_value' => variable_get('persistent_login_secure', 1),
     '#options' => array(t('Every page except the listed pages.'),
-			t('Only the listed pages.')),
-  );
+			t('Only the listed pages.')));
   $form['persistent_login_pages'] = array(
     '#type' => 'textarea',
     '#title' => t('Pages'),
@@ -80,8 +79,7 @@ function persistent_login_settings() {
 				     PERSISTENT_LOGIN_SECURE_PATHS),
     '#cols' => 40,
     '#rows' => 5,
-    '#description' => t("Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are '<em>blog</em>' for the blog page, '<em>blog/*</em>' for every personal blog, and '<em>blog*</em>' for both. '<em>&lt;front&gt;</em>' is the front page."),
-  );
+    '#description' => t("Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are '<em>blog</em>' for the blog page, '<em>blog/*</em>' for every personal blog, and '<em>blog*</em>' for both. '<em>&lt;front&gt;</em>' is the front page."));
   return $form;
 }
 
@@ -149,49 +147,52 @@ function persistent_login_init() {
     /* for efficiency, only check once per session unless something changes */
     $_SESSION['persistent_login_check'] = true;
 
-    $cookie = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+    list($uid, $series, $token) = 
+      explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
     $now = time();
     $r = db_fetch_array
-      (db_query('SELECT u.name, rm.uid, rm.expires FROM {persistent_login} rm '.
-		'INNER JOIN {users} u on u.uid = rm.uid '.
-		'WHERE rm.uid=%d AND rm.rnd="%s" AND '.
-		'      (rm.expires = 0 OR rm.expires > %d)',
-		$cookie[0], $cookie[1], $now));
-    if (is_array($r) && count($r) > 0) {
-      /* 
-        The Persistent Login cookie is valid.  $r is a 'user form' that
-        contains only name, uid, and expires.  Change expires to
-        persistent_login_expires so keep the namespace clean.  Also add
-        persistent_login so we and other modules can tell what is going on.
-      */
+      (db_query('SELECT u.name, pl.uid, pl.series as pl_series, '.
+		'       pl.token as pl_token, pl.expires as pl_expires '.
+		'FROM {persistent_login} pl '.
+		'INNER JOIN {users} u USING (uid) '.
+		'WHERE pl.uid=%d AND pl.series="%s" AND '.
+		'      (pl.expires = 0 OR pl.expires > %d)',
+		$uid, $series, $now));
+    if (! is_array($r) || count($r) == 0) {
+      // $uid:$series is invalid or expired.  We can't tell, so punt.
+      return;
+    }
+    if ($r['pl_token'] === $token) {
+
+      // The Persistent Login cookie is valid.  $r is a 'user form'
+      // that contains only name, uid, pl_series, pl_token, and
+      // pl_expires.  Add persistent_login so we and other modules can
+      // tell what is going on.
+      //
       $r['persistent_login'] = 1;
-      $r['persistent_login_expires'] = $r['expires'];
-      unset($r['expires']);
 
-      /*
-        Verify the account is still valid.  Without $r['pass'], no
-        actual authentication will occur.
-
-        Note that if an admin edits a user to be blocked, all existing
-        persistent login tokens are deleted from the db anyway.  A user
-        account might passively expire, though.
-      */
+      // Verify the account is still valid.  Without $r['pass'], no
+      // actual authentication will occur.
+      // 
+      // Note that if an admin edits a user to be blocked, all
+      // existing persistent login tokens are deleted from the db
+      // anyway.  A user account might passively expire, though.
+      //
       user_login_validate('persistent_login', $r);
       if (form_get_errors()) {
 	/* user is not logged in; may get access denied depending on page */
 	return;
       }
 
-      /* Delete the one-time use persistent login cookie */
-      db_query('DELETE FROM {persistent_login} WHERE uid=%d AND rnd="%s"',
-	       $cookie[0], $cookie[1]);
+      // Delete the one-time use persistent login cookie 
+      db_query('DELETE FROM {persistent_login} WHERE uid=%d AND series="%s"',
+	       $uid, $series);
 
-      /*
-        Log in the user.  Use user_login_submit here so
-        hook_user('login') is invoked, login is watchdogged, and db is
-        updated.  Be sure to override persistent_login_login set in our
-        hook_user.
-      */
+      // Log in the user.  Use user_login_submit here so
+      // hook_user('login') is invoked, login is watchdogged, and db
+      // is updated.  Be sure to override persistent_login_login to
+      // TRUE (it is set to FALSE in our hook_user).
+      //
       $user = user_load(array('uid' => $r['uid']));
       user_login_submit('persistent_login', $r);
       $_SESSION['persistent_login_login'] = true;
@@ -201,12 +202,38 @@ function persistent_login_init() {
       /* reload this page as the user in case some other init hook cares */
       drupal_goto(substr(drupal_get_destination(), 12));
       return; /*not reached*/
+    } else {
+      
+      // The Persistent Login cookie is NOT valid, but $uid:$series
+      // was right.  This means two browsers are sharing the cookie,
+      // so someone is cheating.  Panic.
+      //
+      db_query('DELETE FROM {persistent_login} WHERE uid=%d', $uid);
+      watchdog('security', t('Stolen Persistent Login session for user '.
+			     '%user detected.',
+			     array('%user' => check_plain($r['name']))));
+      drupal_set_message
+	(t('<p><b>SECURITY ALERT!</b></p>'.
+	   '<p>You previously logged in to this site and checked the '.
+	   '<em>Remember me</em> box.  At that time, this site stored '.
+	   'a "login cookie" on your web browser that it uses to '.
+	   'identify you each time you return.</p>'.
+	   '<p>However, the login cookie that your browser just provided is '.
+	   'incorrect.  One possible cause of this error is that '.
+	   'your web browser cookies have been stolen and used '.
+	   'by someone else to impersonate you at this site.</p>'.
+	   '<p>As a precaution, we have deactivated all your remembered '.
+	   'logins to this site.  '.
+	   'You can log in again to this site with your username and '.
+	   'password.</p>'),
+	 'error');
+      return;
     }
   } else if ($_SESSION['persistent_login_login']) {
-    /*
-      User is logged in only via Persistent Login.  Don't let them visit
-      restricted pages.
-    */
+
+    // User is logged in only via Persistent Login.  Don't let her
+    // visit restricted pages.
+    //
     $path = $_GET['q'];
     $page_match = _persistent_login_match($path);
     if ($page_match) {
@@ -216,7 +243,7 @@ function persistent_login_init() {
       $_SESSION['persistent_login_login'] = FALSE;
       $_SESSION['persistent_login_auto'] = TRUE;
       drupal_set_message(t('Please verify your username and password to '.
-			   'view this page.'), 'error');
+			   'access this page.'), 'error');
       drupal_goto('user/login', drupal_get_destination());
     }
   }
@@ -231,8 +258,8 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
   case 'login':
     if ($edit['persistent_login'] == 1) {
-      /* set a new cookie, preserving original expiration if present */
-      _persistent_login_setcookie($user, $edit['persistent_login_expires']);
+      /* set a new cookie, preserving series and expiration if present */
+      _persistent_login_setcookie($user, $edit);
     }
     $_SESSION['persistent_login_login'] = FALSE;
     break;
@@ -241,9 +268,10 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
     if (! is_null($_COOKIE[PERSISTENT_LOGIN_COOKIE])) {
       $_SESSION['persistent_login_check'] = NULL;
       $_SESSION['persistent_login_login'] = NULL;
-      $cookie = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
-      db_query('DELETE FROM {persistent_login} WHERE uid=%d AND rnd="%s"',
-	       $cookie[0], $cookie[1]);
+      list($uid, $series, $token) = 
+	explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+      db_query('DELETE FROM {persistent_login} WHERE uid=%d AND series="%s"',
+	       $uid, $series);
     }
     break;
 
@@ -297,16 +325,29 @@ function persistent_login_erase($uid = NULL) {
   drupal_goto();
 }
 
-function _persistent_login_setcookie($user, $expires = NULL) {
+function _persistent_login_setcookie($user, $edit = array()) {
+  // We're about to set a new PL cookie.  If the user already has a PL
+  // but $edit['pl_series'] does not exist, they got here because they
+  // tried to access a protected page and had to reauthenticate.
+  // Clean up the old PL series to avoid junk in the db.
+  //
+  if (isset($_COOKIE[PERSISTENT_LOGIN_COOKIE]) && !isset($edit['pl_series'])) {
+    list($uid, $series, $token) = 
+      explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+    db_query('DELETE FROM {persistent_login} WHERE uid=%d AND series="%s"',
+	     $uid, $series);
+  }
+
   $tok = md5(mt_rand().$user->pass.mt_rand());
   $days = variable_get('persistent_login_maxlife', PERSISTENT_LOGIN_MAXLIFE);
-  if (! isset($expires)) {
-    $expires = ($days > 0) ? time()+$days*86400 : 0;
-  }
-  setcookie(PERSISTENT_LOGIN_COOKIE, $user->uid.':'.$tok, 
+  $expires = (isset($edit['pl_expires']) ? $edit['pl_expires'] : 
+	      ($days > 0) ? time()+$days*86400 : 0);
+  $series = (isset($edit['pl_series']) ? $edit['pl_series'] :
+	     md5(mt_rand().$user->pass.mt_rand()));
+  setcookie(PERSISTENT_LOGIN_COOKIE, $user->uid.':'.$series.':'.$tok, 
 	    $expires > 0 ? $expires : 2147483647, '/');
-  db_query('INSERT INTO {persistent_login} (rnd, uid, expires) '.
-	   'VALUES ("%s", %d, %d)', $tok, $user->uid, $expires);
+  db_query('INSERT INTO {persistent_login} (uid, series, token, expires) '.
+	   'VALUES (%d, "%s", "%s", %d)', $user->uid, $series, $tok, $expires);
 }
 
 /**

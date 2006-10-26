@@ -2,30 +2,41 @@
 // $Id$
 
 function persistent_login_install() {
+  db_query(persistent_login_create_table_sql());
+}
+
+function persistent_login_create_table_sql() {
   switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      db_query("CREATE TABLE {persistent_login} (".
-	       "rnd char(32) NOT NULL, ".
-	       "uid int unsigned NOT NULL, ".
-	       "expires int unsigned NOT NULL, ".
-	       "PRIMARY KEY (rnd), ".
-	       "INDEX (uid), ".
-	       "INDEX (expires) ".
-	       ") /*!40100 DEFAULT CHARACTER SET utf8 */;"
-	       );
-      break;
-      
+  case 'mysql':
+  case 'mysqli':
+    return("CREATE TABLE {persistent_login} (".
+	   "uid int unsigned NOT NULL, ".
+	   "series char(32) NOT NULL, ".
+	   "token char(32) NOT NULL, ".
+	   "expires int unsigned NOT NULL default '1', ".
+	   "PRIMARY KEY (uid,series), ".
+	   "INDEX (expires) ".
+	   ") /*!40100 DEFAULT CHARACTER SET utf8 */;"
+	   );
+    break;
+    
   case 'pgsql':
-      db_query("CREATE TABLE {persistent_login} (".
-	       "rnd char(32) NOT NULL, ".
-	       "uid integer unsigned NOT NULL, ".
-	       "expires integer unsigned NOT NULL, ".
-	       "PRIMARY KEY (rnd) ".
-	       "INDEX (uid), ".
-	       "INDEX (expires), ".
-	       ")"
-	       );
-      break;
+    return("CREATE TABLE {persistent_login} (".
+	   "uid integer unsigned NOT NULL, ".
+	   "series char(32) NOT NULL, ".
+	   "token char(32) NOT NULL, ".
+	   "expires integer unsigned NOT NULL default '1', ".
+	   "PRIMARY KEY (uid,series) ".
+	   "INDEX (expires), ".
+	   ")"
+	   );
+    break;
   }
+}
+
+function persistent_login_update_1() {
+  $ret = array();
+  $ret[] = update_sql("DROP TABLE {persistent_login}");
+  $ret[] = update_sql(persistent_login_create_table_sql());
+  return $ret;
 }
