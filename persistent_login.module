@@ -46,6 +46,7 @@ function _persistent_login_debug() {
 		  'WHERE pl.uid=%d', $user->uid);
   $rows = array();
   while ($r = db_fetch_array($res)) {
+    $row = array();
     $row[] = $r['uid'];
     $row[] = $r['series'];
     $row[] = $r['token'];
@@ -85,10 +86,22 @@ function persistent_login_menu($may_cache) {
        'callback' => 'persistent_login_erase',
        'access' => TRUE,
        'type' => MENU_CALLBACK);
+    $items[] = array
+      ('path' => 'admin/settings/persistent_login',
+       'title' => t('Persistent Login'),
+       'description' => t('Control Persistent Login session lifetime and restricted pages.'),
+       'callback' => 'drupal_get_form',
+       'callback arguments' => 'persistent_login_admin_settings',
+       'access' => user_access('administer Persistent Login'),
+       'type' => MENU_NORMAL_ITEM);
   } else {
     _persistent_login_check();
   }
   return $items;
+}
+
+function persistent_login_admin_settings() {
+  return system_settings_form(persistent_login_settings());
 }
 
 function persistent_login_settings() {
@@ -211,13 +224,14 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
 			      $account->uid, time()));
       $items[] = array
 	('title' => t('Remembered logins'),
-	 'value' => t('You have %n persistent login session(s) created with '.
-		      'the "Remember Me" login option on this site.<br />'.
-		      l(t('Erase persistent logins now'),
-			'persistent_login/erase/'.$account->uid, array(),
-			drupal_get_destination()).
-		      ' (this will not log you out).',
-		      array('%n' => $n)),
+	 'value' => (t('You have %n persistent login session(s) created with '.
+		       'the "Remember Me" login option on this site.',
+		       array('%n' => $n)).
+		     '<br />'.
+		     l(t('Erase persistent logins now'),
+		       'persistent_login/erase/'.$account->uid, array(),
+		       drupal_get_destination()).
+		     t(' (this will not log you out).')),
 	 'class' => 'logins',
 	 );
       
