@@ -212,13 +212,14 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
 			      $account->uid, time()));
       $items[] = array
 	('title' => t('Remembered logins'),
-	 'value' => t('You have %n persistent login session(s) created with '.
-		      'the "Remember Me" login option on this site.<br />'.
-		      l(t('Erase persistent logins now'),
-			'persistent_login/erase/'.$account->uid, array(),
-			drupal_get_destination()).
-		      ' (this will not log you out).',
-		      array('%n' => $n)),
+	 'value' => (t('You have %n persistent login session(s) created with '.
+		       'the "Remember Me" login option on this site.',
+		       array('%n' => $n)).
+		     '<br />'.
+		     l(t('Erase persistent logins now'),
+		       'persistent_login/erase/'.$account->uid, array(),
+		       drupal_get_destination()).
+		     t(' (this will not log you out).')),
 	 'class' => 'logins',
 	 );
       
