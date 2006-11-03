@@ -4,7 +4,7 @@ Persistent Login module
 
 PREREQUISITES
 
-Drupal 4.7.
+Drupal 4.7 or 5.0 (be sure to use the correct version)
 
 OVERVIEW
 
@@ -44,10 +44,9 @@ caution is required when upgrading it to a new version.
 5.  Return to administer >> settings >> Site Maintenance and put your
     site back online.
 
-NOTE: If update.php shows a version update for Persistent Login, and
-possibly even if it does not, all currently remembered login sessions
-for all users will be lost.  Everyone will have to log in again with
-their username and password.
+NOTE: If update.php shows a version update for Persistent Login, all
+currently remembered login sessions for all users may be lost.
+Everyone will have to log in again with their username and password.
 
 DESCRIPTION
 
@@ -66,12 +65,11 @@ The module's settings allow the administrator to:
 Each user's 'my account' view tab gives them option of explicitly
 clearing all of his/her remembered logins.
 
-Persistent Login is independent of the PHP session settings and is more
-secure (and user-friendly) than simply setting a long PHP session
-lifetime.  Persistent Login's design is based on "Persistent Login Cookie
-Best Practice" by Charles Miller, 01/19/2004.  See
-http://fishbowl.pastiche.org/2004/01/19/persistent_login_cookie_best_practice
-for details.
+Persistent Login is independent of the PHP session settings and is
+more secure (and user-friendly) than simply setting a long PHP session
+lifetime.  For a detailed discussion of the design and security of
+Persistent Login, see "Improved Persistent Login Cookie Best Practice"
+<http://www.jaspan.com/improved_persistent_login_cookie_best_practice>.
 
 AUTHOR
 
