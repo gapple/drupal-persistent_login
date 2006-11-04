@@ -363,6 +363,8 @@ function _persistent_login_check() {
       // was right.  This means two browsers are sharing the cookie,
       // so someone is cheating.  Panic.
       //
+      $d = array();
+      persistent_login_user('logout', $d, $user);
       db_query('DELETE FROM {persistent_login} WHERE uid=%d', $uid);
       watchdog('security', t('Stolen Persistent Login session for user '.
 			     '%user detected.',
@@ -397,8 +399,9 @@ function _persistent_login_check() {
       unset($_SESSION['persistent_login_check']);
       unset($_SESSION['persistent_login_login']);
       $_SESSION['persistent_login_reauth'] = TRUE;
+      unset($_REQUEST['destination']);
       drupal_set_message(t('Please verify your username and password to '.
-			   'access this page.'), 'error');
+			   'access this page.', 'error'));
       drupal_goto('user/login', drupal_get_destination());
     }
   }
