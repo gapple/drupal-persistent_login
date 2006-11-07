@@ -13,53 +13,6 @@ define('PERSISTENT_LOGIN_SECURE_PATHS',
 define('PERSISTENT_LOGIN_MAXLIFE', 30);
 
 /**
- * Implementation of hook_block().
- */
-function persistent_login_block($op = 'list', $delta = 0, $edit = array()) {
-  switch ($op) {
-  case 'list':
-    $blocks[0] = array('info' => t('Persistent Login debug'));
-    return $blocks;
-    
-  case 'view':
-    $block = array('subject' => t('Persistent Login'),
-		   'content' => _persistent_login_debug());
-    return $block;
-  }
-}
-function _persistent_login_debug() {
-  $output = ('<div class="error">Security Hole!  Debugging only. '.
-	     'Turn this off!</div>');
-
-  global $user;
-  $now = time();
-  $output .= ('<p>Time: '.format_date($now)." ($now)<br />" .
-	      'Uid: '.$user->uid.'</p>');
-
-  $output .= '<p>Cookies<br />';
-  foreach ($_COOKIE as $name => $value) {
-    $output .= "$name = $value<br />";
-  }
-
-  $output .= '<p>Stored data:<br />';
-  $res = db_query('SELECT * FROM {persistent_login} pl ' .
-		  'WHERE pl.uid=%d', $user->uid);
-  $rows = array();
-  while ($r = db_fetch_array($res)) {
-    $row = array();
-    $row[] = $r['uid'];
-    $row[] = $r['series'];
-    $row[] = $r['token'];
-    $row[] = $r['expires'];
-    $rows[] = $row;
-  }
-  $output .= theme('table', array('uid', 'series', 'token', 'expires'),
-		   $rows);
-  
-  return $output;
-}
-
-/**
  * Implementation of hook_help().
  */
 function persistent_login_help($section) {
@@ -211,8 +164,8 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
       unset($_SESSION['persistent_login_reauth']);
       list($uid, $series, $token) = 
 	explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
-      db_query('DELETE FROM {persistent_login} WHERE uid=%d AND series="%s"',
-	       $uid, $series);
+      _persistent_login_invalidate('logout', 'uid=%d AND series="%s"',
+				   $uid, $series);
     }
     break;
 
@@ -241,7 +194,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
 
   case 'update':
   case 'delete':
-    db_query('DELETE FROM {persistent_login} WHERE uid=%d', $account->uid);
+    _persistent_login_invalidate($op, 'uid=%d', $account->uid);
     unset($_SESSION['persistent_login_check']);
     unset($_SESSION['persistent_login_login']);
     break;
@@ -252,7 +205,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
  * Implementation of hook_cron().
  */
 function persistent_login_cron() {
-  db_query('DELETE FROM {persistent_login} WHERE expires < %d', time());
+  _persistent_login_invalidate('cron', 'expires < %d', time());
 }
 
 function persistent_login_erase($uid = NULL) {
@@ -262,7 +215,7 @@ function persistent_login_erase($uid = NULL) {
   }
   if ($uid > 0 &&
       ($user->uid == $uid || user_access('administer Persistent Login'))) {
-    db_query('DELETE FROM {persistent_login} WHERE uid=%d', $uid);
+    _persistent_login_invalidate('erase', 'uid=%d', $uid);
   }
   drupal_goto();
 }
@@ -292,6 +245,8 @@ function _persistent_login_check() {
     return;
   }
 
+  $now = time();
+
   if ($user->uid == 0 && !is_null($_COOKIE[PERSISTENT_LOGIN_COOKIE]) &&
       !$_SESSION['persistent_login_check']) {
     /* for efficiency, only check once per session unless something changes */
@@ -299,13 +254,13 @@ function _persistent_login_check() {
 
     list($uid, $series, $token) = 
       explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
-    $now = time();
     $r = db_fetch_array
       (db_query('SELECT u.name, pl.uid, pl.series as pl_series, '.
 		'       pl.token as pl_token, pl.expires as pl_expires '.
 		'FROM {persistent_login} pl '.
 		'INNER JOIN {users} u USING (uid) '.
 		'WHERE pl.uid=%d AND pl.series="%s" AND '.
+		'      pl.valid=1 AND '.
 		'      (pl.expires = 0 OR pl.expires > %d)',
 		$uid, $series, $now));
     if (! is_array($r) || count($r) == 0) {
@@ -335,8 +290,8 @@ function _persistent_login_check() {
       }
 
       // Delete the one-time use persistent login cookie 
-      db_query('DELETE FROM {persistent_login} WHERE uid=%d AND series="%s"',
-	       $uid, $series);
+      _persistent_login_invalidate('used', 'uid=%d AND series="%s"', 
+				   $uid, $series);
 
       // Log in the user.  Use user_login_submit here so
       // hook_user('login') is invoked, login is watchdogged, and db
@@ -365,7 +320,7 @@ function _persistent_login_check() {
       //
       $d = array();
       persistent_login_user('logout', $d, $user);
-      db_query('DELETE FROM {persistent_login} WHERE uid=%d', $uid);
+      _persistent_login_invalidate('stolen', 'uid=%d', $uid);
       watchdog('security', t('Stolen Persistent Login session for user '.
 			     '%user detected.',
 			     array('%user' => check_plain($r['name']))));
@@ -384,6 +339,7 @@ function _persistent_login_check() {
 	   'You can log in again to this site with your username and '.
 	   'password.</p>'),
 	 'error');
+      drupal_goto();
       return;
     }
   } else if ($_SESSION['persistent_login_login']) {
@@ -401,7 +357,7 @@ function _persistent_login_check() {
       $_SESSION['persistent_login_reauth'] = TRUE;
       unset($_REQUEST['destination']);
       drupal_set_message(t('Please verify your username and password to '.
-			   'access this page.', 'error'));
+			   'access this page.'), 'error');
       drupal_goto('user/login', drupal_get_destination());
     }
   }
@@ -416,8 +372,8 @@ function _persistent_login_setcookie($user, $edit = array()) {
   if (isset($_COOKIE[PERSISTENT_LOGIN_COOKIE]) && !isset($edit['pl_series'])) {
     list($uid, $series, $token) = 
       explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
-    db_query('DELETE FROM {persistent_login} WHERE uid=%d AND series="%s"',
-	     $uid, $series);
+    _persistent_login_invalidate('cleanup', 'uid=%d AND series="%s"',
+				 $uid, $series);
   }
 
   $tok = md5(mt_rand().$user->pass.mt_rand());
@@ -428,8 +384,18 @@ function _persistent_login_setcookie($user, $edit = array()) {
 	     md5(mt_rand().$user->pass.mt_rand()));
   setcookie(PERSISTENT_LOGIN_COOKIE, $user->uid.':'.$series.':'.$tok, 
 	    $expires > 0 ? $expires : 2147483647, '/');
-  db_query('INSERT INTO {persistent_login} (uid, series, token, expires) '.
-	   'VALUES (%d, "%s", "%s", %d)', $user->uid, $series, $tok, $expires);
+  db_query('INSERT INTO {persistent_login} '.
+	   '(uid, series, token, expires, valid, why) '.
+	   'VALUES (%d, "%s", "%s", %d, 1, "issue")',
+	   $user->uid, $series, $tok, $expires);
+  if (db_affected_rows() != 1) {
+    watchdog('security', t('Persistent Login FAILURE: could not insert '.
+			   '(%user, %series, %tok, %expires)',
+			   array('%user' => check_plain($user->name),
+				 '%series' => check_plain($series),
+				 '%tok' => check_plain($tok),
+				 '%expires' => check_plain($expires))));
+  }
 }
 
 /**
@@ -443,18 +409,46 @@ function _persistent_login_setcookie($user, $edit = array()) {
  * @@return
  *  0 - page should be insecure.
  *  1 - page should be secure.
- *  NULL - do not change page.
  */
 function _persistent_login_match($path) {
   $secure = variable_get('persistent_login_secure', 1);
-  $pages = variable_get('persistent_login_pages', 
-			PERSISTENT_LOGIN_SECURE_PATHS);
+  $pages = trim(variable_get('persistent_login_pages', 
+			     PERSISTENT_LOGIN_SECURE_PATHS));
 
   if ($pages) {
-    $regexp = '/^('. preg_replace(array('/(\r\n?|\n)/', '/\\\\\*/', '/(^|\|)\\\\<front\\\\>($|\|)/'), array('|', '.*', '\1'. preg_quote(variable_get('site_frontpage', 'node'), '/') .'\2'), preg_quote($pages, '/')) .')$/';
+    $front = variable_get('site_frontpage', 'node');
+    $regexp = 
+      ('/^(?:'. 
+       preg_replace(array('/(\r\n?|\n)/',
+			  '/\\\\\*/', 
+			  '/(^|\|)\\\\<front\\\\>($|\|)/'),
+		    array('|',
+			  '.*', 
+			  '\1'. preg_quote($front, '/') .'\2'),
+		    preg_quote($pages, '/')).
+       ')$/');
     return !($secure xor preg_match($regexp, $path));
   }
   else {
-    return;
+    return 0;
   }
 }
+
+function _persistent_login_invalidate($why, $where) {
+  $vals = func_get_args();
+  array_shift($vals);
+  array_shift($vals);
+  
+  if (TRUE) {
+    array_unshift($vals, time()-1, $why);
+    db_query('UPDATE {persistent_login} SET valid=0, expires=%d, why="%s" '.
+	     'WHERE valid = 1 AND '.$where, $vals);
+  } else {
+    db_query('DELETE FROM {persistent_login} WHERE '.$where, $vals);
+  }
+}
+
+// Nothing to see here.  Move along.
+// include 'persistent_login_debug.inc';
+
+?>
