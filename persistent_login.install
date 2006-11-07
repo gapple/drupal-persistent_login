@@ -14,7 +14,9 @@ function persistent_login_create_table_sql() {
 	   "series char(32) NOT NULL, ".
 	   "token char(32) NOT NULL, ".
 	   "expires int unsigned NOT NULL default '1', ".
-	   "PRIMARY KEY (uid,series), ".
+	   "valid int unsigned NOT NULL, ".
+	   "why varchar(255) NOT NULL, ".
+	   "PRIMARY KEY (uid,series,token), ".
 	   "INDEX (expires) ".
 	   ") /*!40100 DEFAULT CHARACTER SET utf8 */;"
 	   );
@@ -26,7 +28,9 @@ function persistent_login_create_table_sql() {
 	   "series char(32) NOT NULL, ".
 	   "token char(32) NOT NULL, ".
 	   "expires integer unsigned NOT NULL default '1', ".
-	   "PRIMARY KEY (uid,series) ".
+	   "valid integer unsigned NOT NULL, ".
+	   "why varchar(255) NOT NULL, ".
+	   "PRIMARY KEY (uid,series,token) ".
 	   "INDEX (expires), ".
 	   ")"
 	   );
@@ -35,6 +39,13 @@ function persistent_login_create_table_sql() {
 }
 
 function persistent_login_update_1() {
+  $ret = array();
+  $ret[] = update_sql("DROP TABLE {persistent_login}");
+  $ret[] = update_sql(persistent_login_create_table_sql());
+  return $ret;
+}
+
+function persistent_login_update_2() {
   $ret = array();
   $ret[] = update_sql("DROP TABLE {persistent_login}");
   $ret[] = update_sql(persistent_login_create_table_sql());
