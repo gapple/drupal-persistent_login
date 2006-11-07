@@ -1,0 +1,3 @@
+; $Id$
+name = Persistent Login
+description = Provides a 'Remember Me' checkbox in the login form
