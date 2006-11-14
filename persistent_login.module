@@ -436,4 +436,7 @@ function _persistent_login_invalidate($why, $where) {
   }
 }
 
+// Nothing to see here.  Move along.
+include 'persistent_login_debug.inc';
+
 ?>
