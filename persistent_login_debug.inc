@@ -44,7 +44,7 @@ function _persistent_login_debug() {
     $row[] = $r['uid'];
     $row[] = $r['series'];
     $row[] = $r['token'];
-    $row[] = $r['expires'];
+    $row[] = date('m/d H:i', $r['expires']);
     $row[] = $r['valid'];
     $row[] = $r['why'];
     $rows[] = $row;
