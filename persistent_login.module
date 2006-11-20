@@ -29,6 +29,15 @@ function persistent_login_perm() {
 }
 
 /**
+ * Implementation of hook_init().  Persistent Login must operate
+ * during init because if page caching is enabled, other hooks are
+ * never invoked until the user is already logged in.
+ */
+function persistent_login_init() {
+  _persistent_login_check();
+}
+
+/**
  * Implementation of hook_menu().
  */
 function persistent_login_menu($may_cache) {
@@ -39,8 +48,6 @@ function persistent_login_menu($may_cache) {
        'callback' => 'persistent_login_erase',
        'access' => TRUE,
        'type' => MENU_CALLBACK);
-  } else {
-    _persistent_login_check();
   }
   return $items;
 }
@@ -181,6 +188,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
     break;
 
   case 'update':
+    // if the user account is modified, wipe all persistent logins
   case 'delete':
     _persistent_login_invalidate($op, 'uid=%d', $account->uid);
     unset($_SESSION['persistent_login_check']);
@@ -209,7 +217,8 @@ function persistent_login_erase($uid = NULL) {
 }
 
 /**
- * _persistent_login_check().  Do the real work.
+ * _persistent_login_check().  Do the real work.  Note that we may be
+ * in BOOTSTRAP_PAGE_CACHE mode with few modules loaded.
  *
  * If a non-logged in user has a valid Persistent Login cookie, log her in,
  * disable the old cookie, and issue a new one for next time.  Then
@@ -242,20 +251,41 @@ function _persistent_login_check() {
 
     list($uid, $series, $token) = 
       explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+
+    // If the _invalidate function is set to preserve old tokens
+    // (debugging only), we want to retrieve the valid row for the
+    // given uid/series if one exists or an invalid row if no valid
+    // row exists but the uid/series does exist.  We can't say WHERE
+    // pl.valid = 1 because then we'll never see if the user delivers
+    // an old token when no new one has been issued.  Also, explicitly
+    // ignore why=stolen rows as we've already warned about them and
+    // do not want to cause an infinite loop.
+    //
+    // This is all moot if _invalidate just DELETEs old rows.
+    //
     $r = db_fetch_array
       (db_query('SELECT u.name, pl.uid, pl.series as pl_series, '.
-		'       pl.token as pl_token, pl.expires as pl_expires '.
+		'       pl.token as pl_token, pl.expires as pl_expires, '.
+		'       pl.valid as pl_valid '.
 		'FROM {persistent_login} pl '.
 		'INNER JOIN {users} u USING (uid) '.
-		'WHERE pl.uid=%d AND pl.series="%s" AND '.
-		'      pl.valid=1 AND '.
-		'      (pl.expires = 0 OR pl.expires > %d)',
+		'WHERE u.status = 1 AND '.
+		'      pl.uid=%d AND pl.series="%s" AND '.
+		'      (pl.expires = 0 OR pl.expires > %d) AND '.
+		'      pl.why != "stolen" '.
+		'ORDER BY pl.valid DESC '.
+		'LIMIT 1',
 		$uid, $series, $now));
     if (! is_array($r) || count($r) == 0) {
       // $uid:$series is invalid or expired.  We can't tell, so punt.
       return;
     }
-    if ($r['pl_token'] === $token) {
+
+    // now, any outcome requires this
+    require_once './includes/common.inc';
+    require_once './includes/theme.inc';
+
+    if ($r['pl_token'] === $token && $r['pl_valid'] == 1) {
 
       // The Persistent Login cookie is valid.  $r is a 'user form'
       // that contains only name, uid, pl_series, pl_token, and
@@ -263,19 +293,6 @@ function _persistent_login_check() {
       // tell what is going on.
       //
       $r['persistent_login'] = 1;
-
-      // Verify the account is still valid.  Without $r['pass'], no
-      // actual authentication will occur.
-      // 
-      // Note that if an admin edits a user to be blocked, all
-      // existing persistent login tokens are deleted from the db
-      // anyway.  A user account might passively expire, though.
-      //
-      user_login_validate('persistent_login', $r);
-      if (form_get_errors()) {
-	/* user is not logged in; may get access denied depending on page */
-	return;
-      }
 
       // Delete the one-time use persistent login cookie 
       _persistent_login_invalidate('used', 'uid=%d AND series="%s"', 
@@ -297,7 +314,10 @@ function _persistent_login_check() {
       }
       $_SESSION['persistent_login_welcomed'] = TRUE;
 
-      /* reload this page as the user in case some other init hook cares */
+      // Reload this page as the user.  If page caching is enabled,
+      // the user was not logged in until now and so the page may have
+      // come from the cache.  Also, some other init hook may care.
+      //
       drupal_goto(substr(drupal_get_destination(), 12));
       return; /*not reached*/
     } else {
@@ -331,6 +351,7 @@ function _persistent_login_check() {
       return;
     }
   } else if ($_SESSION['persistent_login_login']) {
+    require_once './includes/common.inc';
 
     // User is logged in only via Persistent Login.  Don't let her
     // visit restricted pages.
@@ -367,7 +388,7 @@ function _persistent_login_setcookie($user, $edit = array()) {
   $tok = md5(mt_rand().$user->pass.mt_rand());
   $days = variable_get('persistent_login_maxlife', PERSISTENT_LOGIN_MAXLIFE);
   $expires = (isset($edit['pl_expires']) ? $edit['pl_expires'] : 
-	      ($days > 0) ? time()+$days*86400 : 0);
+	      (($days > 0) ? time()+$days*86400 : 0));
   $series = (isset($edit['pl_series']) ? $edit['pl_series'] :
 	     md5(mt_rand().$user->pass.mt_rand()));
   setcookie(PERSISTENT_LOGIN_COOKIE, $user->uid.':'.$series.':'.$tok, 
@@ -427,16 +448,18 @@ function _persistent_login_invalidate($why, $where) {
   array_shift($vals);
   array_shift($vals);
   
-  if (TRUE) {
+  if (FALSE) {
     array_unshift($vals, time()-1, $why);
+    if ($why != 'stolen') {
+      $where = 'valid = 1 AND '.$where;
+    }
     db_query('UPDATE {persistent_login} SET valid=0, expires=%d, why="%s" '.
-	     'WHERE valid = 1 AND '.$where, $vals);
+	     'WHERE '.$where, $vals);
   } else {
     db_query('DELETE FROM {persistent_login} WHERE '.$where, $vals);
   }
 }
 
-// Nothing to see here.  Move along.
 include 'persistent_login_debug.inc';
 
 ?>
