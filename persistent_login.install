@@ -51,3 +51,12 @@ function persistent_login_update_2() {
   $ret[] = update_sql(persistent_login_create_table_sql());
   return $ret;
 }
+
+// Some versions of persistent_login (wrongly) did not use hook_init
+// and so may not have bootstrap set in the system table.
+function persistent_login_update_3() {
+  $ret = array();
+  $ret[] = update_sql("UPDATE {system} SET bootstrap = 1 WHERE ".
+		      "name='persistent_login'");
+  return $ret;
+}
