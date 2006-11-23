@@ -315,6 +315,7 @@ function _persistent_login_check() {
       // is updated.  Be sure to override persistent_login_login to
       // TRUE (it is set to FALSE in our hook_user).
       //
+      drupal_load('module', 'user');
       $user = user_load(array('uid' => $r['uid']));
       user_login_submit('persistent_login', $r);
       $_SESSION['persistent_login_login'] = TRUE;
