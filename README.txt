@@ -71,6 +71,15 @@ lifetime.  For a detailed discussion of the design and security of
 Persistent Login, see "Improved Persistent Login Cookie Best Practice"
 <http://www.jaspan.com/improved_persistent_login_cookie_best_practice>.
 
+TO DO
+
+- Define 'allow persistent login' permission so some roles can be
+  prevented from using it.
+- Allow modules to specify paths that require a full login.  A normal
+  hook won't work for this because not all modules are loaded during
+  hook_init when Persistent Login makes this decision.
+
+
 AUTHOR
 
 Barry Jaspan
