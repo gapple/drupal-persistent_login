@@ -123,6 +123,8 @@ function persistent_login_form_alter($form_id, &$form) {
 
   if ($form_id == 'user_login') {
     $form['persistent_login'] = $element;
+    $form['persistent_login']['#attributes'] = array('tabindex' => 3);
+    $form['op']['#attributes'] = array('tabindex' => 4);
   } else if ($form_id == 'user_login_block') {
     /* there must be a better way! */
     $tmp = $form;
