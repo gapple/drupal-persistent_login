@@ -186,18 +186,25 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
 			      $account->uid, time()));
       $items[] = array
 	('title' => t('Remembered logins'),
-	 'value' => (t('You have %n persistent login session(s) created with '.
-		       'the "Remember Me" login option on this site.',
-		       array('%n' => $n)).
-		     '<br />'.
-		     l(t('Erase persistent logins now'),
-		       'persistent_login/erase/'.$account->uid, array(),
-		       drupal_get_destination()).
-		     t(' (this will not log you out).')),
+	 'value' => (t('@acct %n persistent login session(s) created with '.
+		       'the "Remember Me" login option on this site.  '.
+		       'If you no longer trust the computer(s) on which '.
+		       'these remembered sessions were created or think '.
+		       'your account has been compromised for any reason, '.
+		       'you can !erase_link (this will not log you out).',
+		       array('@acct' => (($user->uid == $account->uid) ? 
+					 t('You have') : 
+					 t('User @user has',
+					   array('@user' => $account->name))),
+			     '%n' => $n,
+			     '!erase_link' => 
+			     l(t('erase persistent logins now'),
+			       'persistent_login/erase/'.$account->uid, array(),
+			       drupal_get_destination())))),
 	 'class' => 'logins',
 	 );
       
-      return ($n > 0) ? array(t('History') => $items) : NULL;
+      return ($n > 0) ? array(t('Security') => $items) : NULL;
     }
     break;
 
