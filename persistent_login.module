@@ -191,7 +191,10 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
 		       'If you no longer trust the computer(s) on which '.
 		       'these remembered sessions were created or think '.
 		       'your account has been compromised for any reason, '.
-		       'you can !erase_link (this will not log you out).',
+		       'you can !erase_link.  This will not log you out of '.
+		       'your current session but you will have to provide '.
+		       'your username and password to log in the next time '.
+		       'you visit this site.',
 		       array('@acct' => (($user->uid == $account->uid) ? 
 					 t('You have') : 
 					 t('User @user has',
