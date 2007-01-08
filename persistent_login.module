@@ -202,7 +202,11 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
     break;
 
   case 'update':
-    // if the user account is modified, wipe all persistent logins
+    // If the password is modified, fall through to wipe all persistent logins
+    if ($edit['pass'] == '') {
+      break;
+    }
+
   case 'delete':
     _persistent_login_invalidate($op, 'uid=%d', $account->uid);
     unset($_SESSION['persistent_login_check']);
