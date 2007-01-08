@@ -215,7 +215,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
  * Implementation of hook_cron().
  */
 function persistent_login_cron() {
-  _persistent_login_invalidate('cron', 'expires < %d', time());
+  _persistent_login_invalidate('cron', 'expires > 0 AND expires < %d', time());
 }
 
 function persistent_login_erase($uid = NULL) {
