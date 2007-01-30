@@ -478,6 +478,7 @@ function _persistent_login_invalidate($why, $where) {
   }
 }
 
-include 'persistent_login_debug.inc';
+// include_once(drupal_get_path('module', 'persistent_login').
+//              '/persistent_login_debug.inc');
 
 ?>
