@@ -263,7 +263,7 @@ function persistent_login_erase($uid = NULL) {
  */
 function _persistent_login_check() {
   global $user;
-  $path = $_GET['q'];
+  $path = isset($_GET['q']) ? $_GET['q'] : '';
 
   /* do not interfere with login/logout pages */
   if ($path === 'user/login' || $path === 'logout') {
@@ -272,8 +272,9 @@ function _persistent_login_check() {
 
   $now = time();
 
-  if ($user->uid == 0 && !is_null($_COOKIE[PERSISTENT_LOGIN_COOKIE]) &&
-      !$_SESSION['persistent_login_check']) {
+  if ($user->uid == 0 && 
+      isset($_COOKIE[PERSISTENT_LOGIN_COOKIE]) &&
+      !isset($_SESSION['persistent_login_check'])) {
     /* for efficiency, only check once per session unless something changes */
     $_SESSION['persistent_login_check'] = TRUE;
 
@@ -379,7 +380,7 @@ function _persistent_login_check() {
       drupal_goto();
       return;
     }
-  } else if ($_SESSION['persistent_login_login']) {
+  } else if (isset($_SESSION['persistent_login_login'])) {
     require_once './includes/common.inc';
 
     // User is logged in only via Persistent Login.  Don't let her
