@@ -166,10 +166,10 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
     case 'login':
       // If we are coming from a login form, $edit['persistent_login']
       // is set if the user checked it.  If we are coming from
-      // persistent_login_check(), $account->persistent_login,
-      // pl_series, and pl_expiration are set.  Either way, issue a
+      // persistent_login_check(), $edit['persistent_login'] is also
+      // set along with pl_series and pl_expiration.  Either way, issue a
       // new PL cookie, preserving series and expiration if present.
-      if (!empty($edit['persistent_login']) || !empty($account->persistent_login)) {
+      if (!empty($edit['persistent_login'])) {
         _persistent_login_setcookie($account, $edit);
       }
       // Assume this is a non-PL login; clear persistent_login_login.
@@ -340,20 +340,19 @@ function _persistent_login_check() {
       _persistent_login_invalidate('used', 'uid=%d AND series=\'%s\'', 
         $uid, $series);
 
-      // Load the account to log in.  Add PL info to the user object
-      // so we and other modules can tell what is going on in
-      // hook_user; we use it to know to assign a new login cookie.
+      // The Persistent Login cookie is valid.  $r is a 'user form'
+      // that contains only name, uid, pl_series, pl_token, and
+      // pl_expires.  Add persistent_login so we and other modules can
+      // tell what is going on.
       //
-      drupal_load('module', 'user');
-      $account = user_load(array('uid' => $r['uid']));
-      $account->persistent_login = 1;
-      $account->pl_series = $r['pl_series'];
-      $account->pl_expires = $r['pl_expires'];
+      $r['persistent_login'] = 1;
 
       // Log in the user.  Use user_external_login() so all the right
       // things happen.  Be sure to override persistent_login_login to
       // TRUE afterwards (our hook_user sets it to FALSE).
       //
+      drupal_load('module', 'user');
+      $account = user_load(array('uid' => $r['uid']));
       if (! user_external_login($account, $r)) {
         return;
       }
@@ -426,15 +425,15 @@ function _persistent_login_check() {
   }
 }
 
-function _persistent_login_setcookie($acct) {
+function _persistent_login_setcookie($acct, $edit = array()) {
   // We're about to set a new PL cookie.  If the user already has a PL
-  // but $acct->pl_series does not exist, they got here because they
+  // but $edit['pl_series'] does not exist, they got here because they
   // tried to access a protected page and had to reauthenticate
-  // (because $acct->pl_series is added by _persistent_login_check(),
+  // (because $edit['pl_series'] is added by _persistent_login_check(),
   // not by any login form).  Clean up the old PL series to avoid junk
   // in the db.
   //
-  if (isset($_COOKIE[PERSISTENT_LOGIN_COOKIE]) && !isset($acct->pl_series)) {
+  if (isset($_COOKIE[PERSISTENT_LOGIN_COOKIE]) && !isset($edit['pl_series'])) {
     list($uid, $series, $token) = 
     explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
     _persistent_login_invalidate('cleanup', 'uid=%d AND series=\'%s\'',
@@ -443,9 +442,9 @@ function _persistent_login_setcookie($acct) {
 
   $tok = drupal_get_token(uniqid(mt_rand(), true));
   $days = variable_get('persistent_login_maxlife', PERSISTENT_LOGIN_MAXLIFE);
-  $expires = (isset($acct->pl_expires) ? $acct->pl_expires : 
+  $expires = (isset($edit['pl_expires']) ? $edit['pl_expires'] : 
     (($days > 0) ? time() + $days * 86400 : 0));
-  $series = (isset($acct->pl_series) ? $acct->pl_series :
+  $series = (isset($edit['pl_series']) ? $edit['pl_series'] :
     drupal_get_token(uniqid(mt_rand(), true)));
   setcookie(PERSISTENT_LOGIN_COOKIE, $acct->uid.':'.$series.':'.$tok, 
     $expires > 0 ? $expires : 2147483647, '/');
