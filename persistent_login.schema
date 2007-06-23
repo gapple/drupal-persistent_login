@@ -1,0 +1,20 @@
+<?php
+// $Id$
+
+function persistent_login_schema() {
+  $schema['persistent_login'] = array(
+    'fields' => array(
+      'uid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
+      'series' => array('type' => 'varchar', 'length' => 32, 'not null' => 1),
+      'token' => array('type' => 'varchar', 'length' => 32, 'not null' => 1),
+      'expires' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1, 'default' => 1),
+      'valid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
+      'why' => array('type' => 'varchar', 'length' => 255, 'not null' => 1)),
+    'primary key' => array('uid', 'series', 'token'),
+    'indexes' => array(
+      'expires' => array('expires')),
+    );
+  return $schema;
+}
+
+?>

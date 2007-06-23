@@ -34,30 +34,32 @@ function _persistent_login_debug() {
     $output .= "$name = $value<br />";
   }
 
-  list($uid, $series, $token) = 
-    explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
-  $res = db_query('SELECT * FROM {persistent_login} pl ' .
-		  'WHERE pl.uid=%d', $uid);
-  $rows = array();
-  while ($r = db_fetch_array($res)) {
-    $row = array();
-    $row[] = $r['uid'];
-    $row[] = $r['series'];
-    $row[] = $r['token'];
-    $row[] = date('m/d H:i', $r['expires']);
-    $row[] = $r['valid'];
-    $row[] = $r['why'];
-    $rows[] = $row;
+  if (!empty($_COOKIE[PERSISTENT_LOGIN_COOKIE])) {
+    list($uid, $series, $token) = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+    $res = db_query('SELECT * FROM {persistent_login} pl WHERE pl.uid=%d', 
+      $uid);
+    $rows = array();
+    while ($r = db_fetch_array($res)) {
+      $row = array();
+      $row[] = $r['uid'];
+      $row[] = $r['series'];
+      $row[] = $r['token'];
+      $row[] = date('m/d H:i', $r['expires']);
+      $row[] = $r['valid'];
+      $row[] = $r['why'];
+      $rows[] = $row;
+    }
+    $output .= '<p>Stored data:<br />';
+    $output .= theme('table', array('uid', 'series', 'token', 'expires',
+                       'valid', 'why'), $rows);
   }
-  $output .= '<p>Stored data:<br />';
-  $output .= theme('table', array('uid', 'series', 'token', 'expires',
-				  'valid', 'why'),
-		   $rows);
   
   $vars = array('check', 'login', 'reauth', 'default_user', 'welcomed');
   foreach ($vars as $var) {
-    $output .= ("persistent_login_$var: ".
-		serialize($_SESSION['persistent_login_'.$var])."<br />");
+    if (!empty($_SESSION['persistent_login_'.$var])) {
+      $output .= ("persistent_login_$var: ".
+        serialize($_SESSION['persistent_login_'.$var])."<br />");
+    }
   }
 
   return $output;
