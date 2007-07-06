@@ -517,7 +517,7 @@ function _persistent_login_invalidate($why, $where) {
 }
 
 // This won't work if caching is enabled because common.inc isn't loaded!
-include_once(drupal_get_path('module', 'persistent_login').
-  '/persistent_login_debug.inc');
+// include_once(drupal_get_path('module', 'persistent_login').
+//  '/persistent_login_debug.inc');
 
 ?>
