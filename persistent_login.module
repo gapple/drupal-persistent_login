@@ -58,8 +58,8 @@ function persistent_login_menu() {
   $items['admin/settings/persistent_login'] = array(
     'title' => t('Persistent Login'),
     'description' => t('Control Persistent Login session lifetime and restricted pages.'),
-    'callback' => 'drupal_get_form',
-    'callback arguments' => 'persistent_login_admin_settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('persistent_login_admin_settings'),
     'access' => user_access('administer Persistent Login'),
     'type' => MENU_NORMAL_ITEM);
   return $items;
@@ -75,13 +75,10 @@ function persistent_login_settings() {
   }
 
   if (ini_get('session.cookie_lifetime') > 0) {
-    drupal_set_message(t('Your site\'s <em>session.cookie_lifetime</em> '.
-                         'PHP setting is %life.  When using Persistent Login, '.
-                         'it should be 0 so that PHP sessions end when '.
-                         'the user closes his/her browser.  You can change '.
-                         'this setting by editing <strong>%file</strong>.',
-                         array('%life' => ini_get('session.cookie_lifetime'),
-                           '%file' => conf_path().'/settings.php')),
+    drupal_set_message(
+      t('Your site\'s <em>session.cookie_lifetime</em> PHP setting is %life.  When using Persistent Login, it should be 0 so that PHP sessions end when the user closes his/her browser.  You can change this setting by editing <strong>%file</strong>.',
+        array('%life' => ini_get('session.cookie_lifetime'),
+          '%file' => conf_path().'/settings.php')),
       'error');
   }
 
@@ -90,9 +87,7 @@ function persistent_login_settings() {
     '#title' => 'Days to remember the user',
     '#default_value' => variable_get('persistent_login_maxlife', 
       PERSISTENT_LOGIN_MAXLIFE),
-    '#description' => t('The maximum number of days for which a persistent '.
-      'login session is valid; afterwards, the user will '.
-      'need to log in again.  Enter 0 for no expiration.'));
+    '#description' => t('The maximum number of days for which a persistent login session is valid; afterwards, the user will need to log in again.  Enter 0 for no expiration.'));
   $form['persistent_login_secure'] = array(
     '#type' => 'radios',
     '#title' => t('Pages which require an explicit login'),
@@ -106,7 +101,7 @@ function persistent_login_settings() {
       PERSISTENT_LOGIN_SECURE_PATHS),
     '#cols' => 40,
     '#rows' => 5,
-    '#description' => t("Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are '<em>blog</em>' for the blog page, '<em>blog/*</em>' for every personal blog, and '<em>blog*</em>' for both. '<em>&lt;front&gt;</em>' is the front page."));
+    '#description' => t("Enter one page per line as Drupal paths.  The '*' character is a wildcard.  Example paths are '<em>blog</em>' for the blog page, '<em>blog/*</em>' for every personal blog, and '<em>blog*</em>' for both. '<em>&lt;front&gt;</em>' is the front page."));
   return $form;
 }
 
@@ -197,30 +192,30 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
         $n = db_result(db_query('SELECT count(*) FROM {persistent_login} '.
                          'WHERE uid=%d AND (expires = 0 OR expires > %d)',
                          $account->uid, time()));
-        $items[] = array(
-          'title' => t('Remembered logins'),
-          'value' => (t('@acct %n persistent login session(s) created with '.
-                        'the "Remember Me" login option on this site.  '.
-                        'If you no longer trust the computer(s) on which '.
-                        'these remembered sessions were created or think '.
-                        'your account has been compromised for any reason, '.
-                        'you can !erase_link.  This will not log you out of '.
-                        'your current session but you will have to provide '.
-                        'your username and password to log in the next time '.
-                        'you visit this site.',
-                        array('@acct' => (($user->uid == $account->uid) ? 
-                                t('You have') : 
-                                t('User @user has',
-                                  array('@user' => $account->name))),
-                          '%n' => $n,
-                          '!erase_link' => 
-                          l(t('erase persistent logins now'),
-                            'persistent_login/erase/'.$account->uid, array(),
-                            drupal_get_destination())))),
-          'class' => 'logins',
-          );
-      
-        return ($n > 0) ? array(t('Security') => $items) : NULL;
+        if ($n > 0) {
+          if (!isset($account->content['security'])) {
+            $account->content['security'] = array();
+          }
+          $account->content['security'] += array(
+            '#type' => 'user_profile_category',
+            '#title' => t('Security'));
+
+          $account->content['security']['persistent_login'] = array(
+            '#type' => 'user_profile_item',
+            '#title' => t('Remembered logins'),
+            '#value' => (t('@acct %n persistent login session(s) created with the "Remember Me" login option on this site.  If you no longer trust the computer(s) on which these remembered sessions were created or think your account has been compromised for any reason, you can !erase_link.  This will not log you out of your current session but you will have to provide your username and password to log in the next time you visit this site.',
+                           array('@acct' => (($user->uid == $account->uid) ? 
+                                   t('You have') : 
+                                   t('User @user has',
+                                     array('@user' => $account->name))),
+                             '%n' => $n,
+                             '!erase_link' => 
+                             l(t('erase persistent logins now'),
+                               'persistent_login/erase/'.$account->uid, array(),
+                               drupal_get_destination())))),
+            '#attributes' => array('class' => 'logins'),
+            );
+        }
       }
       break;
 
@@ -381,23 +376,10 @@ function _persistent_login_check() {
       $d = array();
       persistent_login_user('logout', $d, $user);
       _persistent_login_invalidate('stolen', 'uid=%d', $uid);
-      watchdog('security', t('Stolen Persistent Login session for user '.
-                 '%user detected.',
+      watchdog('security', t('Stolen Persistent Login session for user %user detected.',
                  array('%user' => check_plain($r['name']))));
       drupal_set_message(
-        t('<p><b>SECURITY ALERT!</b></p>'.
-          '<p>You previously logged in to this site and checked the '.
-          '<em>Remember me</em> box.  At that time, this site stored '.
-          'a "login cookie" on your web browser that it uses to '.
-          'identify you each time you return.</p>'.
-          '<p>However, the login cookie that your browser just provided is '.
-          'incorrect.  One possible cause of this error is that '.
-          'your web browser cookies have been stolen and used '.
-          'by someone else to impersonate you at this site.</p>'.
-          '<p>As a precaution, we have deactivated all your remembered '.
-          'logins to this site.  '.
-          'You can log in again to this site with your username and '.
-          'password.</p>'),
+        t('<p><b>SECURITY ALERT!</b></p><p>You previously logged in to this site and checked the <em>Remember me</em> box.  At that time, this site stored a "login cookie" on your web browser that it uses to identify you each time you return.</p><p>However, the login cookie that your browser just provided is incorrect.  One possible cause of this error is that your web browser cookies have been stolen and used by someone else to impersonate you at this site.</p><p>As a precaution, we have deactivated all your remembered logins to this site.  You can log in again to this site with your username and password.</p>'),
         'error');
       drupal_goto();
       return;
@@ -418,8 +400,7 @@ function _persistent_login_check() {
       unset($_SESSION['persistent_login_login']);
       $_SESSION['persistent_login_reauth'] = TRUE;
       unset($_REQUEST['destination']);
-      drupal_set_message(t('Please verify your username and password to '.
-                           'access this page.'), 'error');
+      drupal_set_message(t('Please verify your username and password to access this page.'), 'error');
       drupal_goto('user/login', drupal_get_destination());
     }
   }
@@ -453,8 +434,7 @@ function _persistent_login_setcookie($acct, $edit = array()) {
     'VALUES (%d, \'%s\', \'%s\', %d, 1, \'issue\')',
     $acct->uid, $series, $tok, $expires);
   if (db_affected_rows() != 1) {
-    watchdog('security', t('Persistent Login FAILURE: could not insert '.
-               '(%user, %series, %tok, %expires)',
+    watchdog('security', t('Persistent Login FAILURE: could not insert (%user, %series, %tok, %expires)',
                array('%user' => check_plain($acct->name),
                  '%series' => check_plain($series),
                  '%tok' => check_plain($tok),
