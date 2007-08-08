@@ -415,12 +415,12 @@ function _persistent_login_setcookie($user, $edit = array()) {
 				 $uid, $series);
   }
 
-  $tok = md5(mt_rand().$user->pass.mt_rand());
+  $tok = drupal_get_token(uniqid(mt_rand(), true));
   $days = variable_get('persistent_login_maxlife', PERSISTENT_LOGIN_MAXLIFE);
   $expires = (isset($edit['pl_expires']) ? $edit['pl_expires'] : 
 	      (($days > 0) ? time()+$days*86400 : 0));
   $series = (isset($edit['pl_series']) ? $edit['pl_series'] :
-	     md5(mt_rand().$user->pass.mt_rand()));
+    drupal_get_token(uniqid(mt_rand(), true)));
   setcookie(PERSISTENT_LOGIN_COOKIE, $user->uid.':'.$series.':'.$tok, 
 	    $expires > 0 ? $expires : 2147483647, '/');
   db_query('INSERT INTO {persistent_login} '.
