@@ -43,13 +43,13 @@ function persistent_login_init() {
 function persistent_login_menu($may_cache) {
   $items = array();
   if ($may_cache) {
-    $items[] = array
-    ('path' => 'persistent_login/erase',
+    $items[] = array(
+      'path' => 'persistent_login/erase',
       'callback' => 'persistent_login_erase',
       'access' => TRUE,
       'type' => MENU_CALLBACK);
-    $items[] = array
-    ('path' => 'admin/settings/persistent_login',
+    $items[] = array(
+      'path' => 'admin/settings/persistent_login',
       'title' => t('Persistent Login'),
       'description' => t('Control Persistent Login session lifetime and restricted pages.'),
       'callback' => 'drupal_get_form',
@@ -69,14 +69,12 @@ function persistent_login_settings() {
     return;
 
   if (ini_get('session.cookie_lifetime') > 0) {
-    drupal_set_message(t('Your site\'s <em>session.cookie_lifetime</em> PHP setting is %life. When using Persistent Login, it should be 0 so that PHP sessions end when the user closes his/her browser. You can change this setting by editing <strong>%file</strong>.',
-                         array('%life' => ini_get('session.cookie_lifetime'),
-                           '%file' => conf_path().'/settings.php')),
+    drupal_set_message(t('Your site\'s <em>session.cookie_lifetime</em> PHP setting is %life. When using Persistent Login, it should be 0 so that PHP sessions end when the user closes his/her browser. You can change this setting by editing <strong>%file</strong>.', array('%life' => ini_get('session.cookie_lifetime'), '%file' => conf_path().'/settings.php')),
       'error');
   }
 
-  $form['persistent_login_maxlife'] = array
-  ('#type' => 'textfield',
+  $form['persistent_login_maxlife'] = array(
+    '#type' => 'textfield',
     '#title' => 'Days to remember the user',
     '#default_value' => variable_get('persistent_login_maxlife', 
       PERSISTENT_LOGIN_MAXLIFE),
@@ -103,13 +101,12 @@ function persistent_login_settings() {
  */
 function persistent_login_form_alter($form_id, &$form) {
   if (substr($form_id, 0, 10) == 'user_login') {
-    $element = array
-    ('#type' => 'checkbox',
+    $element = array(
+      '#type' => 'checkbox',
       '#title' => t('Remember me'));
     
     if ($_SESSION['persistent_login_default_user']) {
-      $form['name']['#default_value'] = 
-      $_SESSION['persistent_login_default_user'];
+      $form['name']['#default_value'] = $_SESSION['persistent_login_default_user'];
     }
     unset($_SESSION['persistent_login_default_user']);
   }
@@ -178,8 +175,8 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
         $n = db_result(db_query('SELECT count(*) FROM {persistent_login} '.
                          'WHERE uid=%d AND (expires = 0 OR expires > %d)',
                          $account->uid, time()));
-        $items[] = array
-        ('title' => t('Remembered logins'),
+        $items[] = array(
+          'title' => t('Remembered logins'),
           'value' => (t('@acct %n persistent login session(s) created with the "Remember Me" login option on this site. If you no longer trust the computer(s) on which these remembered sessions were created or think your account has been compromised for any reason, you can !erase_link. This will not log you out of your current session but you will have to provide your username and password to log in the next time you visit this site.',
                         array('@acct' => (($user->uid == $account->uid) ? 
                                 t('You have') : 
@@ -264,8 +261,7 @@ function _persistent_login_check() {
     /* for efficiency, only check once per session unless something changes */
     $_SESSION['persistent_login_check'] = TRUE;
 
-    list($uid, $series, $token) = 
-    explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+    list($uid, $series, $token) = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
 
     // If the _invalidate function is set to preserve old tokens
     // (debugging only), we want to retrieve the valid row for the
@@ -278,19 +274,19 @@ function _persistent_login_check() {
     //
     // This is all moot if _invalidate just DELETEs old rows.
     //
-    $r = db_fetch_array
-    (db_query('SELECT u.name, pl.uid, pl.series as pl_series, '.
-      '       pl.token as pl_token, pl.expires as pl_expires, '.
-      '       pl.valid as pl_valid '.
-      'FROM {persistent_login} pl '.
-      'INNER JOIN {users} u USING (uid) '.
-      'WHERE u.status = 1 AND '.
-      '      pl.uid=%d AND pl.series="%s" AND '.
-      '      (pl.expires = 0 OR pl.expires > %d) AND '.
-      '      pl.why != "stolen" '.
-      'ORDER BY pl.valid DESC '.
-      'LIMIT 1',
-      $uid, $series, $now));
+    $r = db_fetch_array(
+      db_query('SELECT u.name, pl.uid, pl.series as pl_series, '.
+        '       pl.token as pl_token, pl.expires as pl_expires, '.
+        '       pl.valid as pl_valid '.
+        'FROM {persistent_login} pl '.
+        'INNER JOIN {users} u USING (uid) '.
+        'WHERE u.status = 1 AND '.
+        '      pl.uid=%d AND pl.series="%s" AND '.
+        '      (pl.expires = 0 OR pl.expires > %d) AND '.
+        '      pl.why != "stolen" '.
+        'ORDER BY pl.valid DESC '.
+        'LIMIT 1',
+        $uid, $series, $now));
     if (! is_array($r) || count($r) == 0) {
       // $uid:$series is invalid or expired.  We can't tell, so punt.
       return;
@@ -388,8 +384,7 @@ function _persistent_login_setcookie($user, $edit = array()) {
   // Clean up the old PL series to avoid junk in the db.
   //
   if (isset($_COOKIE[PERSISTENT_LOGIN_COOKIE]) && !isset($edit['pl_series'])) {
-    list($uid, $series, $token) = 
-    explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+    list($uid, $series, $token) = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
     _persistent_login_invalidate('cleanup', 'uid=%d AND series="%s"',
       $uid, $series);
   }
