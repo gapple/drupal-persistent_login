@@ -9,4 +9,55 @@ function persistent_login_uninstall() {
   drupal_uninstall_schema('persistent_login');
 }
 
+/**
+ * Update Persistent Login to Drupal 6.x.  Previous versions of PL
+ * always re-created its tables from scratch at every update so we do
+ * not really know what state we are in.  Luckily, PL data can be
+ * wiped safely; users will just have to log in again.  So, here we
+ * drop and re-create the tables to a known state, and henceforth
+ * we'll know what we have.
+ */
+function persistent_login_update_6000() {
+  $ret = array();
+
+  // Some versions of persistent_login (wrongly) did not use hook_init
+  // and so may not have bootstrap set in the system table.
+  $ret[] = update_sql('UPDATE {system} SET bootstrap = 1 WHERE '.
+		      'name=\'persistent_login\'');
+
+  $ret[] = update_sql('DROP TABLE IF EXISTS {persistent_login}');
+  $ret[] = update_sql('DROP TABLE IF EXISTS {persistent_login_history}');
+
+  $schema['persistent_login'] = array(
+    'fields' => array(
+      'uid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
+      'series' => array('type' => 'varchar', 'length' => 32, 'not null' => 1),
+      'token' => array('type' => 'varchar', 'length' => 32, 'not null' => 1),
+      'expires' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
+      ),
+    'primary key' => array('uid', 'series'),
+    'indexes' => array(
+      'expires' => array('expires')),
+    );
+  db_create_table($ret, 'persistent_login', $schema['persistent_login']);
+
+  $schema['persistent_login_history'] = array(
+    'fields' => array(
+      'uid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
+      'series' => array('type' => 'varchar', 'length' => 32, 'not null' => 1),
+      'token' => array('type' => 'varchar', 'length' => 32, 'not null' => 1),
+      'expires' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
+      'at' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
+      'why' => array('type' => 'varchar', 'length' => 255, 'not null' => 1),
+      ),
+    'primary key' => array('uid', 'series', 'token'),
+    'indexes' => array(
+      'expires' => array('at')),
+    );
+  db_create_table($ret, 'persistent_login_history', 
+    $schema['persistent_login_history']);
+
+  return $ret;
+}
+
 ?>

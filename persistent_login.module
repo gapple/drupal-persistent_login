@@ -84,7 +84,7 @@ function persistent_login_settings() {
 
   $form['persistent_login_maxlife'] = array(
     '#type' => 'textfield',
-    '#title' => 'Days to remember the user',
+    '#title' => t('Days to remember the user'),
     '#default_value' => variable_get('persistent_login_maxlife', 
       PERSISTENT_LOGIN_MAXLIFE),
     '#description' => t('The maximum number of days for which a persistent login session is valid; afterwards, the user will need to log in again.  Enter 0 for no expiration.'));
@@ -290,38 +290,18 @@ function _persistent_login_check() {
       ':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
 
     // Determine if the token is valid by looking for it in the db.
-    //
-    // Checking u.status=1 here is optional.  user_external_login()
-    // will verify that as well and display an error if the user is
-    // blocked.  The user's PL cookie will also be invalidated, but
-    // that's fine; if they are re-activated, they can just log in again.
-    //
-    // If the _invalidate function is set to preserve old tokens
-    // (debugging only), we want to retrieve the valid row for the
-    // given uid/series if one exists or an invalid row if no valid
-    // row exists but the uid/series does exist.  We can't say WHERE
-    // pl.valid = 1 because then we'll never see if the user delivers
-    // an old token when no new one has been issued.  Also, explicitly
-    // ignore why=stolen rows as we've already warned about them and
-    // do not want to cause an infinite loop.
-    //
-    // This is all moot if _invalidate just DELETEs old rows.
-    //
-    $r = db_fetch_array(
-      db_query('SELECT u.name, pl.uid, pl.series as pl_series, '.
-        '       pl.token as pl_token, pl.expires as pl_expires, '.
-        '       pl.valid as pl_valid '.
-        'FROM {persistent_login} pl '.
-        'INNER JOIN {users} u USING (uid) '.
-        'WHERE '. // see above comment: u.status = 1 AND '.
-        '      pl.uid=%d AND pl.series=\'%s\' AND '.
-        '      (pl.expires = 0 OR pl.expires > %d) AND '.
-        '      pl.why != \'stolen\' '.
-        'ORDER BY pl.valid DESC '.
-        'LIMIT 1',
-        $uid, $series, $now));
+    $res = db_query('SELECT u.name, pl.uid, pl.series as pl_series, '.
+      '       pl.token as pl_token, pl.expires as pl_expires '.
+      'FROM {persistent_login} pl '.
+      'INNER JOIN {users} u USING (uid) '.
+      'WHERE u.status = 1 AND pl.uid=%d AND pl.series=\'%s\'',
+      $uid, $series);
+    $r = db_fetch_array($res);
     if (! is_array($r) || count($r) == 0) {
-      // $uid:$series is invalid or expired.  We can't tell, so punt.
+      // $uid:$series is invalid
+      return;
+    } else if ($r['pl_expires'] > 0 && $r['pl_expires'] < time()) {
+      // $uid:$series has expired
       return;
     }
 
@@ -329,7 +309,7 @@ function _persistent_login_check() {
     require_once './includes/common.inc';
     require_once './includes/theme.inc';
 
-    if ($r['pl_token'] === $token && $r['pl_valid'] == 1) {
+    if ($r['pl_token'] === $token) {
 
       // Delete the one-time use persistent login cookie 
       _persistent_login_invalidate('used', 'uid=%d AND series=\'%s\'', 
@@ -375,15 +355,16 @@ function _persistent_login_check() {
       //
       // Reset PL state in $_SESSION.
       $d = array();
-      persistent_login_user('logout', $d, $user);
       _persistent_login_invalidate('stolen', 'uid=%d', $uid);
+      persistent_login_user('logout', $d, $user);
       // Delete all open sessions for this user.  Use $uid from the
       // PL cookie, not $user->uid which is still 0.  No need to
       // regenerate the session, user will be anonymous on next visit.
       sess_destroy_uid($uid);
       // Log the event, warn the user.
-      watchdog('security', t('Stolen Persistent Login session for user %user detected.',
-                 array('%user' => check_plain($r['name']))));
+      watchdog('security',
+        t('Stolen Persistent Login session for user %user detected.',
+          array('%user' => check_plain($r['name']))));
       drupal_set_message(
         t('<p><b>SECURITY ALERT!</b></p><p>You previously logged in to this site and checked the <em>Remember me</em> box.  At that time, this site stored a "login cookie" on your web browser that it uses to identify you each time you return.  However, the login cookie that your browser just provided is incorrect.  One possible cause of this error is that your web browser cookies have been stolen and used by someone else to impersonate you at this site.</p><p>As a precaution, we logged out all of your current sessions and deactivated all your remembered logins to this site.  You can log in again now.</p>'),
         'error');
@@ -435,10 +416,8 @@ function _persistent_login_setcookie($acct, $edit = array()) {
     drupal_get_token(uniqid(mt_rand(), true)));
   setcookie(PERSISTENT_LOGIN_COOKIE, $acct->uid.':'.$series.':'.$tok, 
     $expires > 0 ? $expires : 2147483647, '/');
-  db_query('INSERT INTO {persistent_login} '.
-    '(uid, series, token, expires, valid, why) '.
-    'VALUES (%d, \'%s\', \'%s\', %d, 1, \'issue\')',
-    $acct->uid, $series, $tok, $expires);
+  db_query('INSERT INTO {persistent_login} (uid, series, token, expires) '.
+    'VALUES (%d, \'%s\', \'%s\', %d)', $acct->uid, $series, $tok, $expires);
   if (db_affected_rows() != 1) {
     watchdog('security', t('Persistent Login FAILURE: could not insert (%user, %series, %tok, %expires)',
                array('%user' => check_plain($acct->name),
@@ -489,17 +468,17 @@ function _persistent_login_invalidate($why, $where) {
   array_shift($vals);
   array_shift($vals);
   
+  // This is currently only for debugging but could be an audit log.
   if (FALSE) {
-    array_unshift($vals, time() - 1, $why);
-    if ($why != 'stolen') {
-      $where = 'valid = 1 AND '.$where;
-    }
-    db_query('UPDATE {persistent_login} SET valid=0, expires=%d, why=\'%s\' '.
-      'WHERE '.$where, $vals);
+    $vals2 = $vals;
+    array_unshift($vals2, time(), $why);
+    db_query('INSERT INTO {persistent_login_history} '.
+      '(uid, series, token, expires, at, why) '.
+      'SELECT uid, series, token, expires, %d, \'%s\' '.
+      'FROM {persistent_login} WHERE '.$where, $vals2);
   }
-  else {
-    db_query('DELETE FROM {persistent_login} WHERE '.$where, $vals);
-  }
+
+  db_query('DELETE FROM {persistent_login} WHERE '.$where, $vals);
 }
 
 // This won't work if caching is enabled because common.inc isn't loaded!
