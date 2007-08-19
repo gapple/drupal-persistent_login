@@ -267,7 +267,7 @@ function _persistent_login_check() {
       '       pl.token as pl_token, pl.expires as pl_expires '.
       'FROM {persistent_login} pl '.
       'INNER JOIN {users} u USING (uid) '.
-      'WHERE pl.uid=%d AND pl.series=\'%s\'',
+      'WHERE u.status = 1 AND pl.uid=%d AND pl.series=\'%s\'',
       $uid, $series);
     $r = db_fetch_array($res);
     if (! is_array($r) || count($r) == 0) {
