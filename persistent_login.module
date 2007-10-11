@@ -82,18 +82,26 @@ function persistent_login_settings() {
       'error');
   }
 
+  $form['persistent_login_welcome'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show welcome message on persistent login.'),
+    '#default_value' => variable_get('persistent_login_welcome', TRUE),
+    '#description' => t('If checked, the message \'Welcome back, <em>username</em>\' will be displayed each time a new login session is created via a Persistent Login cookie.'));
+
   $form['persistent_login_maxlife'] = array(
     '#type' => 'textfield',
     '#title' => t('Days to remember the user'),
     '#default_value' => variable_get('persistent_login_maxlife', 
       PERSISTENT_LOGIN_MAXLIFE),
     '#description' => t('The maximum number of days for which a persistent login session is valid; afterwards, the user will need to log in again.  Enter 0 for no expiration.'));
+
   $form['persistent_login_secure'] = array(
     '#type' => 'radios',
     '#title' => t('Pages which require an explicit login'),
     '#default_value' => variable_get('persistent_login_secure', 1),
     '#options' => array(t('Every page except the listed pages.'),
 			t('Only the listed pages.')));
+
   $form['persistent_login_pages'] = array(
     '#type' => 'textarea',
     '#title' => t('Pages'),
@@ -326,7 +334,10 @@ function _persistent_login_check() {
       // things happen.  Be sure to override persistent_login_login to
       // TRUE afterwards (our hook_user sets it to FALSE).
       //
-      drupal_load('module', 'user');
+      // user_external_login() requires user.module and
+      // drupal_get_form() which needs system.module... just finish booting.
+      drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+
       $account = user_load(array('uid' => $r['uid']));
       if (! user_external_login($account, $r)) {
         return;
@@ -334,7 +345,8 @@ function _persistent_login_check() {
       $_SESSION['persistent_login_login'] = TRUE;
 
       // Only welcome the user back once per session.
-      if (empty($_SESSION['persistent_login_welcomed'])) {
+      if (empty($_SESSION['persistent_login_welcomed']) &&
+        variable_get('persistent_login_welcome', TRUE)) {
         drupal_set_message(t('Welcome back, %name.',
                              array('%name' => check_plain($r['name']))));
       }
