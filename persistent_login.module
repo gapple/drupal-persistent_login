@@ -43,7 +43,25 @@ function persistent_login_boot() {
  * control, perform a Persistent Login if appropriate.
  */
 function persistent_login_init() {
-  _persistent_login_check();
+  global $user;
+
+  if (isset($_SESSION['persistent_login_login'])) {
+    // User is logged in only via Persistent Login.  Don't let her
+    // visit restricted pages.
+    //
+    $path = $_GET['q'];
+    $page_match = _persistent_login_match($path);
+    if ($page_match) {
+      $_SESSION['persistent_login_default_user'] = $user->name;
+      $user = user_load(array('uid' => 0));
+      unset($_SESSION['persistent_login_check']);
+      unset($_SESSION['persistent_login_login']);
+      $_SESSION['persistent_login_reauth'] = TRUE;
+      unset($_REQUEST['destination']);
+      drupal_set_message(t('Please verify your username and password to access this page.'), 'error');
+      drupal_goto('user/login', drupal_get_destination());
+    }
+  }
 }
 
 /**
@@ -184,7 +202,8 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
       break;
 
     case 'logout':
-      if (! is_null($_COOKIE[PERSISTENT_LOGIN_COOKIE])) {
+      if (! empty($_COOKIE[PERSISTENT_LOGIN_COOKIE])) {
+        setcookie(PERSISTENT_LOGIN_COOKIE, '', time() - 86400, '/');
         unset($_SESSION['persistent_login_check']);
         unset($_SESSION['persistent_login_login']);
         unset($_SESSION['persistent_login_reauth']);
@@ -230,7 +249,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
     case 'update':
       // If the password is modified, fall through to wipe all
       // persistent logins
-      if ($edit['pass'] == '') {
+      if (empty($edit['pass'])) {
         break;
       }
 
@@ -384,25 +403,6 @@ function _persistent_login_check() {
       return;
     }
   }
-  else if (isset($_SESSION['persistent_login_login'])) {
-    require_once './includes/common.inc';
-
-    // User is logged in only via Persistent Login.  Don't let her
-    // visit restricted pages.
-    //
-    $path = $_GET['q'];
-    $page_match = _persistent_login_match($path);
-    if ($page_match) {
-      $_SESSION['persistent_login_default_user'] = $user->name;
-      $user = user_load(array('uid' => 0));
-      unset($_SESSION['persistent_login_check']);
-      unset($_SESSION['persistent_login_login']);
-      $_SESSION['persistent_login_reauth'] = TRUE;
-      unset($_REQUEST['destination']);
-      drupal_set_message(t('Please verify your username and password to access this page.'), 'error');
-      drupal_goto('user/login', drupal_get_destination());
-    }
-  }
 }
 
 function _persistent_login_setcookie($acct, $edit = array()) {
@@ -493,8 +493,7 @@ function _persistent_login_invalidate($why, $where) {
   db_query('DELETE FROM {persistent_login} WHERE '.$where, $vals);
 }
 
-// This won't work if caching is enabled because common.inc isn't loaded!
-// include_once(drupal_get_path('module', 'persistent_login').
-//  '/persistent_login_debug.inc');
+//include_once(dirname(drupal_get_filename('module', 'persistent_login')).
+//'/persistent_login_debug.inc');
 
 ?>
