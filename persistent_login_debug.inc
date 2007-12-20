@@ -45,14 +45,10 @@ function _persistent_login_debug() {
     $row[] = $r['series'];
     $row[] = $r['token'];
     $row[] = date('m/d H:i', $r['expires']);
-    $row[] = $r['valid'];
-    $row[] = $r['why'];
     $rows[] = $row;
   }
   $output .= '<p>Stored data:<br />';
-  $output .= theme('table', array('uid', 'series', 'token', 'expires',
-				  'valid', 'why'),
-		   $rows);
+  $output .= theme('table', array('uid', 'series', 'token', 'expires'), $rows);
   
   $vars = array('check', 'login', 'reauth', 'default_user', 'welcomed');
   foreach ($vars as $var) {

@@ -166,7 +166,8 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
       break;
 
     case 'logout':
-      if (! is_null($_COOKIE[PERSISTENT_LOGIN_COOKIE])) {
+      if (! empty($_COOKIE[PERSISTENT_LOGIN_COOKIE])) {
+        setcookie(PERSISTENT_LOGIN_COOKIE, '', time() - 86400, '/');
         unset($_SESSION['persistent_login_check']);
         unset($_SESSION['persistent_login_login']);
         unset($_SESSION['persistent_login_reauth']);
@@ -204,7 +205,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
 
     case 'update':
       // If the password is modified, fall through to wipe all persistent logins
-      if ($edit['pass'] == '') {
+      if (empty($edit['pass'])) {
         break;
       }
 
