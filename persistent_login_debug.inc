@@ -58,5 +58,3 @@ function _persistent_login_debug() {
 
   return $output;
 }
-
-?>
