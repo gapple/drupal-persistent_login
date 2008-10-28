@@ -1,4 +1,4 @@
 ; $Id$
 name = Persistent Login
 core = 6.x
-description = Provides a 'Remember Me' checkbox in the login form
+description = Provides a 'Remember Me' checkbox in the login form.
