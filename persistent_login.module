@@ -375,7 +375,8 @@ function _persistent_login_check() {
       // the user was not logged in until now and so the page may have
       // come from the cache.  Also, some other init hook may care.
       //
-      drupal_goto(urldecode(substr(drupal_get_destination(), 12)));
+      $_REQUEST['destination'] = substr(drupal_get_destination(), 12);
+      drupal_goto();
       // not reached
       return;
     }
