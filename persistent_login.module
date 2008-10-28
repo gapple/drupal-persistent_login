@@ -70,15 +70,16 @@ function persistent_login_init() {
 function persistent_login_menu() {
   $items = array();
   $items['persistent_login/erase'] = array(
-    'callback' => 'persistent_login_erase',
-    'access' => TRUE,
+    'title' => 'Erase persistent logins',
+    'page callback' => 'persistent_login_erase',
+    'access callback' => 'user_is_logged_in',
     'type' => MENU_CALLBACK);
   $items['admin/settings/persistent_login'] = array(
-    'title' => t('Persistent Login'),
-    'description' => t('Control Persistent Login session lifetime and restricted pages.'),
+    'title' => 'Persistent Login',
+    'description' => 'Control Persistent Login session lifetime and restricted pages.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('persistent_login_admin_settings'),
-    'access' => user_access('administer Persistent Login'),
+    'access arguments' => array('administer Persistent Login'),
     'type' => MENU_NORMAL_ITEM);
   return $items;
 }
@@ -268,15 +269,27 @@ function persistent_login_cron() {
   _persistent_login_invalidate('cron', 'expires > 0 AND expires < %d', time());
 }
 
+/**
+ * Menu callback to erase a user's Persistent Login records.  The menu
+ * entry guarantees that the user is logged in.
+ *
+ * @param $uid
+ *  The user id for whom to erase PL records.  A user can specify any
+ *  uid for the callback, but only the current user's id will work
+ *  unless the user has 'administer Persistent Login' permission.
+ * @return
+ *  Redirects to user/$uid if allowed or calls drupal_access_denied().
+ */
 function persistent_login_erase($uid = NULL) {
   global $user;
   if (! isset($uid)) {
     $uid = $user->uid;
   }
-  if ($uid > 0 && ($user->uid == $uid || user_access('administer Persistent Login'))) {
+  if ($user->uid == $uid || user_access('administer Persistent Login')) {
     _persistent_login_invalidate('erase', 'uid=%d', $uid);
+    drupal_goto('user/'. $uid);
   }
-  drupal_goto();
+  drupal_access_denied();
 }
 
 /**
