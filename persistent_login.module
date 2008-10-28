@@ -334,6 +334,7 @@ function _persistent_login_check() {
 
     // now, any outcome requires this
     require_once './includes/common.inc';
+    require_once './includes/path.inc';
     require_once './includes/theme.inc';
 
     if ($r['pl_token'] === $token) {
@@ -495,5 +496,3 @@ function _persistent_login_invalidate($why, $where) {
 
 //include_once(dirname(drupal_get_filename('module', 'persistent_login')).
 //'/persistent_login_debug.inc');
-
-?>

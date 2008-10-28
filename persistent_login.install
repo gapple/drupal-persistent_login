@@ -98,5 +98,3 @@ function persistent_login_update_6000() {
 
   return $ret;
 }
-
-?>
