@@ -188,7 +188,7 @@ function persistent_login_form_alter(&$form, $form_state, $form_id) {
  * Implementation of hook_user().
  */
 function persistent_login_user($op, &$edit, &$account, $category = NULL) {
-  global $user;
+  global $user, $cookie_domain;
   switch ($op) {
     case 'login':
       // If we are coming from a login form, $edit['persistent_login']
@@ -209,7 +209,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
 
     case 'logout':
       if (!empty($_COOKIE[PERSISTENT_LOGIN_COOKIE])) {
-        setcookie(PERSISTENT_LOGIN_COOKIE, '', time() - 86400, '/');
+        setcookie(PERSISTENT_LOGIN_COOKIE, '', time() - 86400, '/', $cookie_domain);
         unset($_SESSION['persistent_login_check']);
         unset($_SESSION['persistent_login_login']);
         unset($_SESSION['persistent_login_reauth']);
@@ -403,6 +403,7 @@ function _persistent_login_check() {
 }
 
 function _persistent_login_setcookie($acct, $edit = array()) {
+  global $cookie_domain;
   // We're about to set a new PL cookie.  If the user already has a PL
   // but $edit['pl_series'] does not exist, they got here because they
   // tried to access a protected page and had to reauthenticate
@@ -420,7 +421,7 @@ function _persistent_login_setcookie($acct, $edit = array()) {
   $expires = (isset($edit['pl_expires']) ? $edit['pl_expires'] : (($days > 0) ? time() + $days * 86400 : 0));
   $series  = (isset($edit['pl_series']) ? $edit['pl_series'] : drupal_get_token(uniqid(mt_rand(), true)));
 
-  setcookie(PERSISTENT_LOGIN_COOKIE, $acct->uid .':'. $series .':'. $tok, $expires > 0 ? $expires : 2147483647, '/');
+  setcookie(PERSISTENT_LOGIN_COOKIE, $acct->uid .':'. $series .':'. $tok, $expires > 0 ? $expires : 2147483647, '/', $cookie_domain);
 
   db_query("INSERT INTO {persistent_login} (uid, series, token, expires) VALUES (%d, '%s', '%s', %d)", $acct->uid, $series, $tok, $expires);
   if (db_affected_rows() != 1) {
