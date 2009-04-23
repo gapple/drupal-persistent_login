@@ -75,7 +75,8 @@ function persistent_login_menu() {
   $items['persistent_login/erase'] = array(
     'title' => 'Erase persistent logins',
     'page callback' => 'persistent_login_erase',
-    'access callback' => 'user_is_logged_in',
+    'access callback' => 'persistent_login_erase_access',
+    'access arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
   $items['admin/settings/persistent_login'] = array(
@@ -264,6 +265,22 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
  */
 function persistent_login_cron() {
   _persistent_login_invalidate('cron', 'expires > 0 AND expires < %d', time());
+}
+
+/**
+ * Access callback to check permission to erase user's Persistent Login records.
+ */
+function persistent_login_erase_access($uid = NULL) {
+  global $user;
+  if ($user->uid) {
+    if (empty($uid)) {
+      $uid = $user->uid;
+    }
+    if ($user->uid == $uid || user_access('administer Persistent Login')) {
+      return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 /**
