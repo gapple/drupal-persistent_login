@@ -384,7 +384,7 @@ function _persistent_login_check() {
 
       // Only welcome the user back once per session.
       if (empty($_SESSION['persistent_login_welcomed']) && variable_get('persistent_login_welcome', TRUE)) {
-        drupal_set_message(t('Welcome back, %name.', array('%name' => check_plain($r['name']))));
+        drupal_set_message(t('Welcome back, %name.', array('%name' => $r['name'])));
       }
       $_SESSION['persistent_login_welcomed'] = TRUE;
 
@@ -411,7 +411,7 @@ function _persistent_login_check() {
       // regenerate the session, user will be anonymous on next visit.
       sess_destroy_uid($uid);
       // Log the event, warn the user.
-      watchdog('security', t('Stolen Persistent Login session for user %user detected.', array('%user' => check_plain($r['name']))));
+      watchdog('security', 'Stolen Persistent Login session for user %user detected.', array('%user' => $r['name']), WATCHDOG_ERROR);
       drupal_set_message(t('<p><b>SECURITY ALERT!</b></p><p>You previously logged in to this site and checked the <em>Remember me</em> box.  At that time, this site stored a "login cookie" on your web browser that it uses to identify you each time you return.  However, the login cookie that your browser just provided is incorrect.  One possible cause of this error is that your web browser cookies have been stolen and used by someone else to impersonate you at this site.</p><p>As a precaution, we logged out all of your current sessions and deactivated all your remembered logins to this site.  You can log in again now.</p>'), 'error');
       drupal_goto();
       return;
@@ -442,12 +442,12 @@ function _persistent_login_setcookie($acct, $edit = array()) {
 
   db_query("INSERT INTO {persistent_login} (uid, series, token, expires) VALUES (%d, '%s', '%s', %d)", $acct->uid, $series, $tok, $expires);
   if (db_affected_rows() != 1) {
-    watchdog('security', t('Persistent Login FAILURE: could not insert (%user, %series, %tok, %expires)', array(
-      '%user' => check_plain($acct->name),
-      '%series' => check_plain($series),
-      '%tok' => check_plain($tok),
-      '%expires' => check_plain($expires),
-    )));
+    watchdog('security', 'Persistent Login FAILURE: could not insert (%user, %series, %tok, %expires)', array(
+      '%user' => $acct->name,
+      '%series' => $series,
+      '%tok' => $tok,
+      '%expires' => $expires,
+    ), WATCHDOG_ERROR);
   }
 }
 
