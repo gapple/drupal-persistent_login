@@ -5,22 +5,21 @@
  * Implementation of hook_schema().
  */
 function persistent_login_schema() {
+  $schema = array();
   $schema['persistent_login'] = array(
-    'description' => t('Stores Persistent Login (PL) information for users that check %remember_me when they log in.  If this info matches an anonymous user\'s PL cookie, they are logged in automatically.  See http://jaspan.com/improved_persistent_login_cookie_best_practice for details on the technique used.',
-      array('%remember_me' => t('Remember me'))
-    ),
+    'description' => 'Stores Persistent Login (PL) information for users that check Remember me when they log in.  If this info matches an anonymous user\'s PL cookie, they are logged in automatically.  See http://jaspan.com/improved_persistent_login_cookie_best_practice for details on the technique used.',
     'fields' => array(
       'uid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1,
-        'description' => t('The {users}.uid this row is for.'),
+        'description' => 'The {users}.uid this row is for.',
       ),
       'series' => array('type' => 'varchar', 'length' => 32, 'not null' => 1,
-        'description' => t('The long-lived series identifying the PL token sequence.'),
+        'description' => 'The long-lived series identifying the PL token sequence.',
       ),
       'token' => array('type' => 'varchar', 'length' => 32, 'not null' => 1,
-        'description' => t('The single-use PL login token.'),
+        'description' => 'The single-use PL login token.',
       ),
       'expires' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1,
-        'description' => t('The expiration date for this series of tokens.'),
+        'description' => 'The expiration date for this series of tokens.',
       ),
     ),
     'primary key' => array('uid', 'series'),
@@ -28,19 +27,18 @@ function persistent_login_schema() {
       'expires' => array('expires'),
     ),
   );
-
   $schema['persistent_login_history'] = array(
-    'description' => t('Stores previous entries from the {persistent_login} table just before they are erased; currently used.  The uid, series, token, and expires fields are copied verbatim.'),
+    'description' => 'Stores previous entries from the {persistent_login} table just before they are erased; currently used.  The uid, series, token, and expires fields are copied verbatim.',
     'fields' => array(
       'uid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
       'series' => array('type' => 'varchar', 'length' => 32, 'not null' => 1),
       'token' => array('type' => 'varchar', 'length' => 32, 'not null' => 1),
       'expires' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
       'at' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1,
-        'description' => t('When this entry was copied from the {persistent_login} table.'),
+        'description' => 'When this entry was copied from the {persistent_login} table.',
       ),
       'why' => array('type' => 'varchar', 'length' => 255, 'not null' => 1,
-        'description' => T('Why this entry was deleted from the {persistent_login} table.'),
+        'description' => 'Why this entry was deleted from the {persistent_login} table.',
       ),
     ),
     'primary key' => array('uid', 'series', 'token'),
@@ -105,13 +103,13 @@ function persistent_login_update_6000() {
       'expires' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
       'at' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
       'why' => array('type' => 'varchar', 'length' => 255, 'not null' => 1),
-      ),
+    ),
     'primary key' => array('uid', 'series', 'token'),
     'indexes' => array(
-      'expires' => array('at')),
-    );
-  db_create_table($ret, 'persistent_login_history', 
-    $schema['persistent_login_history']);
+      'expires' => array('at'),
+    ),
+  );
+  db_create_table($ret, 'persistent_login_history', $schema['persistent_login_history']);
 
   return $ret;
 }
