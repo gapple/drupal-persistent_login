@@ -18,9 +18,9 @@ define('PERSISTENT_LOGIN_MAXLIFE', 30);
 /**
  * Implementation of hook_help().
  */
-function persistent_login_help($section) {
-  if ($section == 'admin/modules#description') {
-    return t('Provide a "Remember Me" checkbox in the login form');
+function persistent_login_help($path, $arg) {
+  if ($path == 'admin/help#persistent_login') {
+    return t('Provide a "Remember Me" checkbox in the login form.');
   }
 }
 
@@ -52,9 +52,7 @@ function persistent_login_init() {
     // User is logged in only via Persistent Login.  Don't let her
     // visit restricted pages.
     //
-    $path = $_GET['q'];
-    $page_match = _persistent_login_match($path);
-    if ($page_match) {
+    if (_persistent_login_match($_GET['q'])) {
       $_SESSION['persistent_login_default_user'] = $user->name;
       $user = user_load(array('uid' => 0));
       unset($_SESSION['persistent_login_check']);
@@ -78,6 +76,7 @@ function persistent_login_menu() {
     'access callback' => 'persistent_login_erase_access',
     'access arguments' => array(2),
     'type' => MENU_CALLBACK,
+    'file' => 'persistent_login.pages.inc',
   );
   $items['admin/settings/persistent_login'] = array(
     'title' => 'Persistent Login',
@@ -86,56 +85,25 @@ function persistent_login_menu() {
     'page arguments' => array('persistent_login_admin_settings'),
     'access arguments' => array('administer Persistent Login'),
     'type' => MENU_NORMAL_ITEM,
+    'file' => 'persistent_login.pages.inc',
   );
   return $items;
 }
 
-function persistent_login_admin_settings() {
-  return system_settings_form(persistent_login_settings());
-}
-
-function persistent_login_settings() {
-  if (!user_access('administer Persistent Login')) {
-    return;
+/**
+ * Access callback to check permission to erase user's Persistent Login records.
+ */
+function persistent_login_erase_access($uid = NULL) {
+  global $user;
+  if ($user->uid) {
+    if (empty($uid)) {
+      $uid = $user->uid;
+    }
+    if ($user->uid == $uid || user_access('administer Persistent Login')) {
+      return TRUE;
+    }
   }
-
-  if (ini_get('session.cookie_lifetime') > 0) {
-    drupal_set_message(t('Your site\'s <em>session.cookie_lifetime</em> PHP setting is %life.  When using Persistent Login, it should be 0 so that PHP sessions end when the user closes his/her browser.  You can change this setting by editing <strong>%file</strong>.', array('%life' => ini_get('session.cookie_lifetime'), '%file' => conf_path() .'/settings.php')), 'error');
-  }
-
-  $form['persistent_login_welcome'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Show welcome message on persistent login.'),
-    '#default_value' => variable_get('persistent_login_welcome', TRUE),
-    '#description' => t('If checked, the message \'Welcome back, <em>username</em>\' will be displayed each time a new login session is created via a Persistent Login cookie.'),
-  );
-
-  $form['persistent_login_maxlife'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Days to remember the user'),
-    '#default_value' => variable_get('persistent_login_maxlife', PERSISTENT_LOGIN_MAXLIFE),
-    '#description' => t('The maximum number of days for which a persistent login session is valid; afterwards, the user will need to log in again.  Enter 0 for no expiration.'),
-  );
-
-  $form['persistent_login_secure'] = array(
-    '#type' => 'radios',
-    '#title' => t('Pages which require an explicit login'),
-    '#default_value' => variable_get('persistent_login_secure', 1),
-    '#options' => array(
-      t('Every page except the listed pages.'),
-      t('Only the listed pages.'),
-    ),
-  );
-
-  $form['persistent_login_pages'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Pages'),
-    '#default_value' => variable_get('persistent_login_pages', PERSISTENT_LOGIN_SECURE_PATHS),
-    '#cols' => 40,
-    '#rows' => 5,
-    '#description' => t("Enter one page per line as Drupal paths.  The '*' character is a wildcard.  Example paths are '<em>blog</em>' for the blog page, '<em>blog/*</em>' for every personal blog, and '<em>blog*</em>' for both. '<em>&lt;front&gt;</em>' is the front page."),
-  );
-  return $form;
+  return FALSE;
 }
 
 /**
@@ -215,7 +183,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
         unset($_SESSION['persistent_login_login']);
         unset($_SESSION['persistent_login_reauth']);
         list($uid, $series, $token) = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
-        _persistent_login_invalidate('logout', 'uid=%d AND series=\'%s\'', $uid, $series);
+        _persistent_login_invalidate('logout', "uid = %d AND series = '%s'", $uid, $series);
       }
       break;
 
@@ -229,18 +197,18 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
           $account->content['security'] += array(
             '#type' => 'user_profile_category',
             '#title' => t('Security'),
+            '#weight' => 10,
           );
-
           $account->content['security']['persistent_login'] = array(
             '#type' => 'user_profile_item',
             '#title' => t('Remembered logins'),
-            '#value' => (t('@acct %n persistent login session(s) created with the "Remember Me" login option on this site.  If you no longer trust the computer(s) on which these remembered sessions were created or think your account has been compromised for any reason, you can !erase_link.  This will not log you out of your current session but you will have to provide your username and password to log in the next time you visit this site.',
-                array(
-                  '@acct' => (($user->uid == $account->uid) ? t('You have') : t('User @user has', array('@user' => $account->name))),
-                  '%n' => $n,
-                  '!erase_link' => l(t('erase persistent logins now'), 'persistent_login/erase/'. $account->uid, array(), drupal_get_destination()),
-                )
-              )),
+            '#value' => t('@acct %n persistent login session(s) created with the "Remember Me" login option on this site.  If you no longer trust the computer(s) on which these remembered sessions were created or think your account has been compromised for any reason, you can !erase_link.  This will not log you out of your current session but you will have to provide your username and password to log in the next time you visit this site.',
+              array(
+                '@acct' => (($user->uid == $account->uid) ? t('You have') : t('User @user has', array('@user' => $account->name))),
+                '%n' => $n,
+                '!erase_link' => l(t('erase persistent logins now'), 'persistent_login/erase/'. $account->uid, array(), drupal_get_destination()),
+              )
+            ),
             '#attributes' => array('class' => 'logins'),
           );
         }
@@ -253,7 +221,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
       }
       // If the password is modified, fall through to wipe all persistent logins.
     case 'delete':
-      _persistent_login_invalidate($op, 'uid=%d', $account->uid);
+      _persistent_login_invalidate($op, 'uid = %d', $account->uid);
       unset($_SESSION['persistent_login_check']);
       unset($_SESSION['persistent_login_login']);
       break;
@@ -265,45 +233,6 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
  */
 function persistent_login_cron() {
   _persistent_login_invalidate('cron', 'expires > 0 AND expires < %d', time());
-}
-
-/**
- * Access callback to check permission to erase user's Persistent Login records.
- */
-function persistent_login_erase_access($uid = NULL) {
-  global $user;
-  if ($user->uid) {
-    if (empty($uid)) {
-      $uid = $user->uid;
-    }
-    if ($user->uid == $uid || user_access('administer Persistent Login')) {
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-/**
- * Menu callback to erase a user's Persistent Login records.  The menu
- * entry guarantees that the user is logged in.
- *
- * @param $uid
- *  The user id for whom to erase PL records.  A user can specify any
- *  uid for the callback, but only the current user's id will work
- *  unless the user has 'administer Persistent Login' permission.
- * @return
- *  Redirects to user/$uid if allowed or calls drupal_access_denied().
- */
-function persistent_login_erase($uid = NULL) {
-  global $user;
-  if (!isset($uid)) {
-    $uid = $user->uid;
-  }
-  if ($user->uid == $uid || user_access('administer Persistent Login')) {
-    _persistent_login_invalidate('erase', 'uid=%d', $uid);
-    drupal_goto('user/'. $uid);
-  }
-  drupal_access_denied();
 }
 
 /**
@@ -359,7 +288,7 @@ function _persistent_login_check() {
 
     if ($r['pl_token'] === $token) {
       // Delete the one-time use persistent login cookie.
-      _persistent_login_invalidate('used', 'uid=%d AND series=\'%s\'', $uid, $series);
+      _persistent_login_invalidate('used', "uid = %d AND series = '%s'", $uid, $series);
 
       // The Persistent Login cookie is valid.  $r is a 'user form'
       // that contains only name, uid, pl_series, pl_token, and
@@ -404,7 +333,7 @@ function _persistent_login_check() {
 
       // Reset PL state in $_SESSION.
       $d = array();
-      _persistent_login_invalidate('stolen', 'uid=%d', $uid);
+      _persistent_login_invalidate('stolen', 'uid = %d', $uid);
       persistent_login_user('logout', $d, $user);
       // Delete all open sessions for this user.  Use $uid from the
       // PL cookie, not $user->uid which is still 0.  No need to
@@ -430,7 +359,7 @@ function _persistent_login_setcookie($acct, $edit = array()) {
   //
   if (isset($_COOKIE[PERSISTENT_LOGIN_COOKIE]) && !isset($edit['pl_series'])) {
     list($uid, $series, $token) = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
-    _persistent_login_invalidate('cleanup', 'uid=%d AND series=\'%s\'', $uid, $series);
+    _persistent_login_invalidate('cleanup', "uid = %d AND series = '%s'", $uid, $series);
   }
 
   $tok     = drupal_get_token(uniqid(mt_rand(), true));
@@ -456,10 +385,10 @@ function _persistent_login_setcookie($acct, $edit = array()) {
  *
  * check the page past and see if it should be secure or insecure.
  *
- * @@param $path
+ * @param $path
  *  the page of the page to check.
  *
- * @@return
+ * @return
  *  0 - page should be insecure.
  *  1 - page should be secure.
  */
@@ -507,5 +436,4 @@ function _persistent_login_invalidate($why, $where) {
   db_query('DELETE FROM {persistent_login} WHERE '. $where, $vals);
 }
 
-//include_once(dirname(drupal_get_filename('module', 'persistent_login')).
-//'/persistent_login_debug.inc');
+//module_load_include('inc', 'persistent_login', 'persistent_login_debug');
