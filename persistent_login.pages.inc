@@ -54,7 +54,7 @@ function persistent_login_admin_settings() {
 }
 
 /**
- * Menu callback to erase a user's Persistent Login records.  The menu
+ * Menu callback to erase a user's Persistent Login records. The menu
  * entry guarantees that the user is logged in.
  *
  * Redirects to user/$uid if allowed or calls drupal_access_denied().
