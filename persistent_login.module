@@ -47,21 +47,17 @@ function persistent_login_boot() {
  */
 function persistent_login_init() {
   global $user;
-
-  if (isset($_SESSION['persistent_login_login'])) {
-    // User is logged in only via Persistent Login.  Don't let her
-    // visit restricted pages.
-    //
-    if (_persistent_login_match($_GET['q'])) {
-      $_SESSION['persistent_login_default_user'] = $user->name;
-      $user = user_load(array('uid' => 0));
-      unset($_SESSION['persistent_login_check']);
-      unset($_SESSION['persistent_login_login']);
-      $_SESSION['persistent_login_reauth'] = TRUE;
-      unset($_REQUEST['destination']);
-      drupal_set_message(t('Please verify your username and password to access this page.'), 'error');
-      drupal_goto('user/login', drupal_get_destination());
-    }
+  // If the user is logged in only via Persistent Login, then don't let them
+  // visit restricted pages.
+  if (isset($_SESSION['persistent_login_login']) && _persistent_login_match($_GET['q'])) {
+    $_SESSION['persistent_login_default_user'] = $user->name;
+    $user = user_load(array('uid' => 0));
+    unset($_SESSION['persistent_login_check']);
+    unset($_SESSION['persistent_login_login']);
+    $_SESSION['persistent_login_reauth'] = TRUE;
+    unset($_REQUEST['destination']);
+    drupal_set_message(t('Please verify your username and password to access this page.'), 'error');
+    drupal_goto('user/login', drupal_get_destination());
   }
 }
 
@@ -386,7 +382,7 @@ function _persistent_login_setcookie($acct, $edit = array()) {
  * check the page past and see if it should be secure or insecure.
  *
  * @param $path
- *  the page of the page to check.
+ *  the path of the page to check.
  *
  * @return
  *  0 - page should be insecure.
@@ -435,5 +431,3 @@ function _persistent_login_invalidate($why, $where) {
 
   db_query('DELETE FROM {persistent_login} WHERE '. $where, $vals);
 }
-
-//module_load_include('inc', 'persistent_login', 'persistent_login_debug');
