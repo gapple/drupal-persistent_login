@@ -75,3 +75,41 @@ function persistent_login_erase($uid = NULL) {
   }
   drupal_access_denied();
 }
+
+/**
+ * After_build callback for login forms.
+ */
+function persistent_login_form_after_build($form, &$form_state) {
+  // FAPI ensures a weight is assigned to all elements before after_build
+  // callback is invoked.
+
+  // Get the weight assigned to the submit button.
+  $original_submit_weight = $form['submit']['#weight'];
+
+  // Increase the weight of all elements with a weight equal or
+  // greater to the weight assigned to the submit button to make
+  // room for the "Remember me" checkbox.
+  foreach (element_children($form) as $key) {
+    if (isset($form[$key]) && $form[$key]) {
+      if ($form[$key]['#weight'] >= $original_submit_weight) {
+        $form[$key]['#weight'] += 2;
+      }
+    }
+  }
+
+  // Give the "Remember me" checkbox the weight originally assigned
+  // to the submit button.
+  $form['persistent_login']['#weight'] = $original_submit_weight;
+
+  // Ensure drupal_render() performs the sort by weight step on the form.
+  unset($form['#sorted']);
+
+  // Adjust the tabindex of the plain login form.
+  if (isset($form['submit']['#attributes']) && isset($form['submit']['#attributes']['tabindex'])) {
+    $tabindex = (int)$form['submit']['#attributes']['tabindex'];
+    $form['persistent_login']['#attributes']['tabindex'] = $tabindex;
+    $form['submit']['#attributes']['tabindex'] = $tabindex + 1;
+  }
+
+  return $form;
+}

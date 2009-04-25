@@ -106,15 +106,15 @@ function persistent_login_erase_access($uid = NULL) {
  * Implementation of hook_form_alter().
  */
 function persistent_login_form_alter(&$form, $form_state, $form_id) {
-  if (substr($form_id, 0, 10) == 'user_login') {
-    $element = array(
-      '#type' => 'checkbox',
-      '#title' => t('Remember me'),
-    );
+  // If this is not a user login form, then we have nothing else todo.
+  if (substr($form_id, 0, 10) != 'user_login') {
+    return;
+  }
 
-    if (!empty($_SESSION['persistent_login_default_user'])) {
-      $form['name']['#default_value'] = $_SESSION['persistent_login_default_user'];
-    }
+  // If the user is reauthenticating, then fill in the name element with the
+  // user name provided by persistent_login_init().
+  if (isset($_SESSION['persistent_login_default_user'])) {
+    $form['name']['#default_value'] = $_SESSION['persistent_login_default_user'];
     unset($_SESSION['persistent_login_default_user']);
   }
 
@@ -131,22 +131,27 @@ function persistent_login_form_alter(&$form, $form_state, $form_id) {
     return;
   }
 
-  if ($form_id == 'user_login') {
-    $form['persistent_login'] = $element;
-    $form['persistent_login']['#attributes'] = array('tabindex' => 3);
-    $form['op']['#attributes'] = array('tabindex' => 4);
+  // Let's add the "Remember me" checkbox to the login form.
+  $form['persistent_login'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Remember me'),
+  );
+
+  // Add an after_build callback that we'll use to adjust the weight
+  // and tabindex attributes of the "Remember me" checkbox.
+  if (!isset($form['#after_build'])) {
+    $form['#after_build'] = array();
   }
-  else if ($form_id == 'user_login_block') {
-    // There must be a better way!
-    $tmp = $form;
-    $form = array();
-    foreach ($tmp as $k => $v) {
-      $form[$k] = $v;
-      if ($k == 'pass') {
-        $form['persistent_login'] = $element;
-      }
-    }
-  }
+  $form['#after_build'][] = 'persistent_login_form_after_build_proxy';
+}
+
+/**
+ * Proxy function to call persistent_login_form_after_build(), because it might
+ * not be included yet when the form is processed and invokes the callback.
+ */
+function persistent_login_form_after_build_proxy($form, &$form_state) {
+  module_load_include('inc', 'persistent_login', 'persistent_login.pages');
+  return persistent_login_form_after_build($form, $form_state);
 }
 
 /**
