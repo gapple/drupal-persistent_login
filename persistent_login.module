@@ -2,11 +2,6 @@
 // $Id$
 
 
-// Include $base_path in PERSISTENT_LOGIN so a user can be logged in
-// to more than one Drupal site per domain.
-global $base_path;
-define('PERSISTENT_LOGIN_COOKIE', 'PERSISTENT_LOGIN_'. preg_replace('/[^a-zA-Z0-9_]/', '_', $base_path));
-
 define('PERSISTENT_LOGIN_SECURE_PATHS', "user/*/*
 user/*/address
 cart/checkout
@@ -158,7 +153,7 @@ function persistent_login_form_after_build_proxy($form, &$form_state) {
  * Implementation of hook_user().
  */
 function persistent_login_user($op, &$edit, &$account, $category = NULL) {
-  global $user, $cookie_domain;
+  global $user;
   switch ($op) {
     case 'login':
       // If we are coming from a login form, $edit['persistent_login']
@@ -167,7 +162,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
       // set along with pl_series and pl_expiration.  Either way, issue a
       // new PL cookie, preserving series and expiration if present.
       if (!empty($edit['persistent_login'])) {
-        _persistent_login_setcookie($account, $edit);
+        _persistent_login_create_cookie($account, $edit);
       }
       // Assume this is a non-PL login; clear persistent_login_login.
       // If this is a PL login, it will be set again by
@@ -178,19 +173,20 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
       break;
 
     case 'logout':
-      if (!empty($_COOKIE[PERSISTENT_LOGIN_COOKIE])) {
-        setcookie(PERSISTENT_LOGIN_COOKIE, '', time() - 86400, '/', $cookie_domain);
+      $cookie_name = _persistent_login_get_cookie_name();
+      if (!empty($_COOKIE[$cookie_name])) {
+        _persistent_login_setcookie($cookie_name, '', time() - 86400);
         unset($_SESSION['persistent_login_check']);
         unset($_SESSION['persistent_login_login']);
         unset($_SESSION['persistent_login_reauth']);
-        list($uid, $series, $token) = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+        list($uid, $series, $token) = explode(':', $_COOKIE[$cookie_name]);
         _persistent_login_invalidate('logout', "uid = %d AND series = '%s'", $uid, $series);
       }
       break;
 
     case 'view':
       if ($user->uid == $account->uid || user_access('administer Persistent Login')) {
-        $n = db_result(db_query('SELECT count(*) FROM {persistent_login} WHERE uid=%d AND (expires = 0 OR expires > %d)', $account->uid, time()));
+        $n = db_result(db_query('SELECT COUNT(*) FROM {persistent_login} WHERE uid = %d AND (expires = 0 OR expires > %d)', $account->uid, time()));
         if ($n > 0) {
           if (!isset($account->content['security'])) {
             $account->content['security'] = array();
@@ -264,11 +260,13 @@ function _persistent_login_check() {
 
   $now = time();
 
-  if ($user->uid == 0 && isset($_COOKIE[PERSISTENT_LOGIN_COOKIE]) && !isset($_SESSION['persistent_login_check'])) {
+  $cookie_name = _persistent_login_get_cookie_name();
+
+  if ($user->uid == 0 && isset($_COOKIE[$cookie_name]) && !isset($_SESSION['persistent_login_check'])) {
     // For efficiency, only check once per session unless something changes.
     $_SESSION['persistent_login_check'] = TRUE;
 
-    list($uid, $series, $token) = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+    list($uid, $series, $token) = explode(':', $_COOKIE[$cookie_name]);
 
     // Determine if the token is valid by looking for it in the db.
     $res = db_query("SELECT u.name, pl.uid, pl.series as pl_series, pl.token as pl_token, pl.expires as pl_expires FROM {persistent_login} pl INNER JOIN {users} u USING (uid) WHERE u.status = 1 AND pl.uid = %d AND pl.series = '%s'", $uid, $series);
@@ -349,36 +347,71 @@ function _persistent_login_check() {
   }
 }
 
-function _persistent_login_setcookie($acct, $edit = array()) {
-  global $cookie_domain;
-  // We're about to set a new PL cookie.  If the user already has a PL
-  // but $edit['pl_series'] does not exist, they got here because they
-  // tried to access a protected page and had to reauthenticate
-  // (because $edit['pl_series'] is added by _persistent_login_check(),
-  // not by any login form).  Clean up the old PL series to avoid junk
-  // in the db.
-  //
-  if (isset($_COOKIE[PERSISTENT_LOGIN_COOKIE]) && !isset($edit['pl_series'])) {
-    list($uid, $series, $token) = explode(':', $_COOKIE[PERSISTENT_LOGIN_COOKIE]);
+/**
+ * Create a Persistent Login cookie.
+ *
+ * We're about to set a new PL cookie.  If the user already has a PL
+ * but $edit['pl_series'] does not exist, they got here because they
+ * tried to access a protected page and had to reauthenticate
+ * (because $edit['pl_series'] is added by _persistent_login_check(),
+ * not by any login form).  Clean up the old PL series to avoid junk
+ * in the db.
+ */
+function _persistent_login_create_cookie($acct, $edit = array()) {
+  $cookie_name = _persistent_login_get_cookie_name();
+  if (isset($_COOKIE[$cookie_name]) && !isset($edit['pl_series'])) {
+    list($uid, $series, $token) = explode(':', $_COOKIE[$cookie_name]);
     _persistent_login_invalidate('cleanup', "uid = %d AND series = '%s'", $uid, $series);
   }
 
-  $tok     = drupal_get_token(uniqid(mt_rand(), true));
+  $token   = drupal_get_token(uniqid(mt_rand(), TRUE));
   $days    = variable_get('persistent_login_maxlife', PERSISTENT_LOGIN_MAXLIFE);
   $expires = (isset($edit['pl_expires']) ? $edit['pl_expires'] : (($days > 0) ? time() + $days * 86400 : 0));
-  $series  = (isset($edit['pl_series']) ? $edit['pl_series'] : drupal_get_token(uniqid(mt_rand(), true)));
+  $series  = (isset($edit['pl_series']) ? $edit['pl_series'] : drupal_get_token(uniqid(mt_rand(), TRUE)));
 
-  setcookie(PERSISTENT_LOGIN_COOKIE, $acct->uid .':'. $series .':'. $tok, $expires > 0 ? $expires : 2147483647, '/', $cookie_domain);
+  _persistent_login_setcookie($cookie_name, $acct->uid .':'. $series .':'. $token, $expires > 0 ? $expires : 2147483647);
 
-  db_query("INSERT INTO {persistent_login} (uid, series, token, expires) VALUES (%d, '%s', '%s', %d)", $acct->uid, $series, $tok, $expires);
+  db_query("INSERT INTO {persistent_login} (uid, series, token, expires) VALUES (%d, '%s', '%s', %d)", $acct->uid, $series, $token, $expires);
   if (db_affected_rows() != 1) {
     watchdog('security', 'Persistent Login FAILURE: could not insert (%user, %series, %tok, %expires)', array(
       '%user' => $acct->name,
       '%series' => $series,
-      '%tok' => $tok,
+      '%tok' => $token,
       '%expires' => $expires,
     ), WATCHDOG_ERROR);
   }
+}
+
+/**
+ * Set a cookie with the same options as the session cookie.
+ *
+ * @param $name
+ *  The name of the cookie.
+ * @param $value
+ *  The value to store in the cookie.
+ * @param $expire
+ *   The time the cookie expires. This is a Unix timestamp so is in number of seconds
+ *   since the epoch. By default expires when the browser is closed.
+ * @param $httponly
+ *   When TRUE the cookie will be made accessible only through the HTTP protocol.
+ */
+function _persistent_login_setcookie($name, $value, $expire = 0, $httponly = FALSE) {
+  $params = session_get_cookie_params();
+  setcookie($name, $value, $expire, $params['path'], $params['domain'], $params['secure'], $httponly);
+}
+
+/**
+ * Get the name of the Persistent Loing cookie.
+ *
+ * Include $base_path in PERSISTENT_LOGIN so a user can be logged in
+ * to more than one Drupal site per domain.
+ */
+function _persistent_login_get_cookie_name() {
+  static $cookie_name;
+  if (!isset($cookie_name)) {
+    $cookie_name = 'PERSISTENT_LOGIN_'. preg_replace('/[^a-zA-Z0-9_]/', '_', $GLOBALS['base_path']);
+  }
+  return $cookie_name;
 }
 
 /**

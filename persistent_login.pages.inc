@@ -92,7 +92,7 @@ function persistent_login_form_after_build($form, &$form_state) {
   foreach (element_children($form) as $key) {
     if (isset($form[$key]) && $form[$key]) {
       if ($form[$key]['#weight'] >= $original_submit_weight) {
-        $form[$key]['#weight'] += 2;
+        $form[$key]['#weight'] += 1;
       }
     }
   }
