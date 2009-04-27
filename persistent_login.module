@@ -402,18 +402,11 @@ function _persistent_login_create_cookie($acct, $edit = array()) {
  */
 function _persistent_login_setcookie($name, $value, $expire = 0, $httponly = FALSE) {
   $params = session_get_cookie_params();
-  // @bugfix: this condition is necessary to ensure old cookies are removed
-  // from the client browser. See http://drupal.org/node/445804
-  // @todo: remove this workaround in the future, when we can be sure no
-  // client browser has old cookies.
-  if (isset($_SERVER['HTTP_COOKIE']) && substr_count($_SERVER['HTTP_COOKIE'], $name .'=') > 1) {
-    setcookie($name, '', time() - 86400, '/');
-  }
   setcookie($name, $value, $expire, $params['path'], $params['domain'], $params['secure'], $httponly);
 }
 
 /**
- * Get the name of the Persistent Loing cookie.
+ * Get the name of the Persistent Login cookie.
  *
  * Include $base_path in PERSISTENT_LOGIN so a user can be logged in
  * to more than one Drupal site per domain.
@@ -421,7 +414,7 @@ function _persistent_login_setcookie($name, $value, $expire = 0, $httponly = FAL
 function _persistent_login_get_cookie_name() {
   static $cookie_name;
   if (!isset($cookie_name)) {
-    $cookie_name = 'PERSISTENT_LOGIN_'. preg_replace('/[^a-zA-Z0-9_]/', '_', $GLOBALS['base_path']);
+    $cookie_name = 'PERSISTENT_LOGIN_'. md5($GLOBALS['base_path']);
   }
   return $cookie_name;
 }
