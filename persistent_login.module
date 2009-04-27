@@ -406,7 +406,7 @@ function _persistent_login_setcookie($name, $value, $expire = 0, $httponly = FAL
   // from the client browser. See http://drupal.org/node/445804
   // @todo: remove this workaround in the future, when we can be sure no
   // client browser has old cookies.
-  if (isset($_SERVER['HTTP_COOKIE']) && substr_count($_SERVER['HTTP_COOKIE'], $name .'=')) {
+  if (isset($_SERVER['HTTP_COOKIE']) && substr_count($_SERVER['HTTP_COOKIE'], $name .'=') > 1) {
     setcookie($name, '', time() - 86400, '/');
   }
   setcookie($name, $value, $expire, $params['path'], $params['domain'], $params['secure'], $httponly);
