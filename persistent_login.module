@@ -319,9 +319,14 @@ function _persistent_login_check() {
       // Reload this page as the user.  If page caching is enabled,
       // the user was not logged in until now and so the page may have
       // come from the cache.  Also, some other init hook may care.
-      //
-      $_REQUEST['destination'] = substr(drupal_get_destination(), 12);
-      drupal_goto();
+      // Also, note that we prevent redirections to front page path.
+      if (!isset($_REQUEST['destination']) && drupal_is_front_page()) {
+        drupal_goto('');
+      }
+      else {
+        $_REQUEST['destination'] = substr(drupal_get_destination(), 12);
+        drupal_goto();
+      }
       // not reached
       return;
     }
