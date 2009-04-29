@@ -80,6 +80,14 @@ function persistent_login_erase($uid = NULL) {
  * After_build callback for login forms.
  */
 function persistent_login_form_after_build($form, &$form_state) {
+  // If we don't have a submit button, then it's a sign someone else altered
+  // the login form in a way that cannot be submitted, so we remove the
+  // "Remember me" checkbox we added in hook_form_alter() and quit.
+  if (!isset($form['submit'])) {
+    unset($form['persistent_login']);
+    return $form;
+  }
+
   // FAPI ensures a weight is assigned to all elements before after_build
   // callback is invoked.
 

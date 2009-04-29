@@ -109,7 +109,11 @@ function persistent_login_form_alter(&$form, $form_state, $form_id) {
   // If the user is reauthenticating, then fill in the name element with the
   // user name provided by persistent_login_init().
   if (isset($_SESSION['persistent_login_default_user'])) {
-    $form['name']['#default_value'] = $_SESSION['persistent_login_default_user'];
+    // Make sure we still have a 'name' element on this form. Note that someone
+    // else could have removed it from its own hook_form_alter() implementation.
+    if (isset($form['name'])) {
+      $form['name']['#default_value'] = $_SESSION['persistent_login_default_user'];
+    }
     unset($_SESSION['persistent_login_default_user']);
   }
 
