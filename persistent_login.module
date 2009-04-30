@@ -401,12 +401,10 @@ function _persistent_login_create_cookie($acct, $edit = array()) {
  * @param $expire
  *   The time the cookie expires. This is a Unix timestamp so is in number of seconds
  *   since the epoch. By default expires when the browser is closed.
- * @param $httponly
- *   When TRUE the cookie will be made accessible only through the HTTP protocol.
  */
-function _persistent_login_setcookie($name, $value, $expire = 0, $httponly = FALSE) {
+function _persistent_login_setcookie($name, $value, $expire = 0) {
   $params = session_get_cookie_params();
-  setcookie($name, $value, $expire, $params['path'], $params['domain'], $params['secure'], $httponly);
+  setcookie($name, $value, $expire, $params['path'], $params['domain'], $params['secure']);
 }
 
 /**
