@@ -392,7 +392,7 @@ function _persistent_login_create_cookie($acct, $edit = array()) {
   else {
     // Make sure we only remember the specified number of Persistent Logins per user.
     $maxlogins = variable_get('persistent_login_maxlogins', 10);
-    $expires = (int)db_result(db_query_range('SELECT expires FROM {persistent_login} WHERE uid = %s ORDER BY expires DESC', $acct->uid, $maxlogins, 1));
+    $expires = (int)db_result(db_query_range('SELECT expires FROM {persistent_login} WHERE uid = %d ORDER BY expires DESC', $acct->uid, $maxlogins, 1));
     if ($expires > 0) {
       _persistent_login_invalidate('too many', 'uid = %d AND expires <= %d', $acct->uid, $expires);
     }
