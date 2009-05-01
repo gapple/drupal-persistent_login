@@ -31,6 +31,14 @@ function persistent_login_admin_settings() {
     '#description' => t('The maximum number of days for which a persistent login session is valid; afterwards, the user will need to log in again.  Enter 0 for no expiration.'),
   );
 
+  $form['persistent_login_maxlogins'] = array(
+    '#type' => 'select',
+    '#title' => t('Remembered logins per user'),
+    '#default_value' => variable_get('persistent_login_maxlogins', 10),
+    '#options' => drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100)),
+    '#description' => t('The maximum number of Persisten Logins remembered per user.'),
+  );
+
   $form['persistent_login_secure'] = array(
     '#type' => 'radios',
     '#title' => t('Pages which require an explicit login'),
