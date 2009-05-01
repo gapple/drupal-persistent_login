@@ -1,6 +1,10 @@
 <?php
 // $Id$
 
+/**
+ * @file
+ * Provide a "Remember Me" checkbox in the login form.
+ */
 
 define('PERSISTENT_LOGIN_SECURE_PATHS', "user/*/*
 user/*/address

@@ -2,6 +2,11 @@
 // $Id$
 
 /**
+ * @file
+ * Implementation of installation/uninstallation hooks.
+ */
+
+/**
  * Implementation of hook_schema().
  */
 function persistent_login_schema() {
