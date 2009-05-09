@@ -261,8 +261,18 @@ function _persistent_login_check() {
   global $user;
   $path = isset($_GET['q']) ? $_GET['q'] : '';
 
-  // Do not interfere with login/logout pages.
-  if ($path === 'user/login' || $path === 'logout') {
+  // Do not interfere with login/logout pages. Note that we're performing this
+  // check during hook_boot(), Drupal has not already normalized the path, so
+  // we need to take care of the path prefix defined for language negotiation.
+  $mode = variable_get('language_negotiation', LANGUAGE_NEGOTIATION_NONE);
+  if ($mode == LANGUAGE_NEGOTIATION_PATH_DEFAULT || $mode == LANGUAGE_NEGOTIATION_PATH) {
+    foreach (array_keys(language_list('prefix')) as $prefix) {
+      if (!empty($prefix) && preg_match('`^('. preg_quote($prefix) .'/){0,1}(user/login|logout)$`', $path)) {
+        return;
+      }
+    }
+  }
+  elseif ($path == 'user/login' || $path == 'logout') {
     return;
   }
 
