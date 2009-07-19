@@ -267,7 +267,7 @@ function _persistent_login_check() {
   $mode = variable_get('language_negotiation', LANGUAGE_NEGOTIATION_NONE);
   if ($mode == LANGUAGE_NEGOTIATION_PATH_DEFAULT || $mode == LANGUAGE_NEGOTIATION_PATH) {
     foreach (array_keys(language_list('prefix')) as $prefix) {
-      if (!empty($prefix) && preg_match('`^('. preg_quote($prefix) .'/){0,1}(user/login|logout)$`', $path)) {
+      if (!empty($prefix) && preg_match('`^(?:'. preg_quote($prefix) .'/){0,1}(?:user/login|logout)$`', $path)) {
         return;
       }
     }
