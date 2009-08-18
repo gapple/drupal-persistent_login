@@ -438,7 +438,9 @@ function _persistent_login_setcookie($name, $value, $expire = 0) {
 function _persistent_login_get_cookie_name() {
   static $cookie_name;
   if (!isset($cookie_name)) {
-    $cookie_name = 'PERSISTENT_LOGIN_'. md5($GLOBALS['base_path']);
+    // Derive the PL cookie name from the Drupal session name.
+    // See conf_init() in Drupal includes/bootstrap.inc.
+    $cookie_name = 'PERSISTENT_LOGIN_'. substr(session_name(), 4);
   }
   return $cookie_name;
 }
