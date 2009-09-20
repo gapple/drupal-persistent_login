@@ -105,8 +105,21 @@ function persistent_login_erase_access($uid = NULL) {
  * Implementation of hook_form_alter().
  */
 function persistent_login_form_alter(&$form, $form_state, $form_id) {
-  // If this is not a user login form, then we have nothing else todo.
-  if (substr($form_id, 0, 10) != 'user_login') {
+  $alter_form = FALSE;
+  if (substr($form_id, 0, 10) == 'user_login') {
+    // This is a login form that we want to alter.
+    $alter_form = TRUE;
+  }
+  elseif (substr($form_id, 0, 13) == 'user_register') {
+    // This is a user register form, but we only want to alter this if
+    // - Visitors can create accounts and no administrator approval is required.
+    // - E-mail verification is not required when a visitor creates an account.
+    // - The form is not being executed by a user administrator.
+    if (!variable_get('user_email_verification', 1) && variable_get('user_register', 1) == 1 && !user_access('administer users')) {
+      $alter_form = TRUE;
+    }
+  }
+  if (!$alter_form) {
     return;
   }
 
@@ -134,11 +147,19 @@ function persistent_login_form_alter(&$form, $form_state, $form_id) {
     return;
   }
 
-  // Let's add the "Remember me" checkbox to the login form.
-  $form['persistent_login'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Remember me'),
-  );
+  // Let's add the "Remember me" checkbox to the login/user register form.
+  if (isset($form['account']) && is_array($form['account'])) {
+    $form['account']['persistent_login'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Remember me'),
+    );
+  }
+  else {
+    $form['persistent_login'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Remember me'),
+    );
+  }
 
   // Add an after_build callback that we'll use to adjust the weight
   // and tabindex attributes of the "Remember me" checkbox.

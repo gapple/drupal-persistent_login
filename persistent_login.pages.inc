@@ -88,42 +88,49 @@ function persistent_login_erase($uid = NULL) {
  * After_build callback for login forms.
  */
 function persistent_login_form_after_build($form, &$form_state) {
+  // Get a reference to the portion of the form we are interested in.
+  if (isset($form['account']) && is_array($form['account'])) {
+    $form_reference = &$form['account'];
+  }
+  else {
+    $form_reference = &$form;
+  }
+
   // If we don't have a submit button, then it's a sign someone else altered
   // the login form in a way that cannot be submitted, so we remove the
   // "Remember me" checkbox we added in hook_form_alter() and quit.
   if (!isset($form['submit'])) {
-    unset($form['persistent_login']);
+    unset($form_reference['persistent_login']);
     return $form;
   }
 
   // FAPI ensures a weight is assigned to all elements before after_build
   // callback is invoked.
 
-  // Get the weight assigned to the submit button.
-  $original_submit_weight = $form['submit']['#weight'];
+  // Get the weight assigned to the password field.
+  $original_pass_weight = $form_reference['pass']['#weight'];
 
-  // Increase the weight of all elements with a weight equal or
-  // greater to the weight assigned to the submit button to make
-  // room for the "Remember me" checkbox.
-  foreach (element_children($form) as $key) {
-    if (isset($form[$key]) && $form[$key]) {
-      if ($form[$key]['#weight'] >= $original_submit_weight) {
-        $form[$key]['#weight'] += 1;
+  // Increase the weight of all elements with a weight greater to the one assigned
+  // to the password field to make room for the "Remember me" checkbox.
+  foreach (element_children($form_reference) as $key) {
+    if (isset($form_reference[$key]) && $form_reference[$key]) {
+      if ($form_reference[$key]['#weight'] > $original_pass_weight) {
+        $form_reference[$key]['#weight'] += 1;
       }
     }
   }
 
-  // Give the "Remember me" checkbox the weight originally assigned
-  // to the submit button.
-  $form['persistent_login']['#weight'] = $original_submit_weight;
+  // Give the "Remember me" checkbox a weight based on the one assigned
+  // to the password field so it renders just after that.
+  $form_reference['persistent_login']['#weight'] = $original_pass_weight + 0.5;
 
   // Ensure drupal_render() performs the sort by weight step on the form.
-  unset($form['#sorted']);
+  unset($form_reference['#sorted']);
 
   // Adjust the tabindex of the plain login form.
   if (isset($form['submit']['#attributes']) && isset($form['submit']['#attributes']['tabindex'])) {
     $tabindex = (int)$form['submit']['#attributes']['tabindex'];
-    $form['persistent_login']['#attributes']['tabindex'] = $tabindex;
+    $form_reference['persistent_login']['#attributes']['tabindex'] = $tabindex;
     $form['submit']['#attributes']['tabindex'] = $tabindex + 1;
   }
 

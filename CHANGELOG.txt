@@ -9,6 +9,8 @@ Features:
 - Added note about max remembered persistent logins. Also, reformatted README.
 - Added @file comments.
 - Added CHANGELOG.txt.
+- #489180 Provide "remember me" checkbox on registration form (when users are able to login immediately).
+
 
 Bugfixes:
 - #448852 Remember me button displays next to User Login link.
