@@ -374,6 +374,10 @@ function _persistent_login_check() {
       // was right.  This means two browsers are sharing the cookie,
       // so someone is cheating.  Panic.
 
+      // watchdog() needs a module that is not loaded yet during hook_boot(),
+      // and t() needs the language initialized... just finish booting.
+      drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+
       // Reset PL state in $_SESSION.
       $d = array();
       _persistent_login_invalidate('stolen', 'uid = %d', $uid);

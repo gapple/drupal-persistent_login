@@ -11,7 +11,6 @@ Features:
 - Added CHANGELOG.txt.
 - #489180 Provide "remember me" checkbox on registration form (when users are able to login immediately).
 
-
 Bugfixes:
 - #448852 Remember me button displays next to User Login link.
 - Remove httponly argument, which is new to PHP 5.2.0.
@@ -20,6 +19,7 @@ Bugfixes:
 - #456334 Problems when cookie domains are www.example.com and subdomain.example.com (drupal removes www.).
   Let's derive the PL cookie name from the Drupal session name.
   Also, please check out Drupal issue [#458704].
+- #621916 PHP notice before security alert.
 
 
 6.x-1.4-beta6
