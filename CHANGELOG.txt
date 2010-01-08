@@ -1,7 +1,10 @@
 // $Id$
 
-6.x-1.x-dev
-===========
+6.x-1.4 (2010-01-08)
+====================
+
+Release notes:
+- Please, read the UPGRADE section in the README.txt.
 
 Features:
 - #442782 Limit the number of PL records in the database per user.
@@ -22,8 +25,8 @@ Bugfixes:
 - #621916 PHP notice before security alert.
 
 
-6.x-1.4-beta6
-=============
+6.x-1.4-beta6 (2009-04-27)
+==========================
 
 The name of the PL cookie has been changed, so users will be logged out the first time they close the browser. After that, PL will start to recognize the "Remember me" option again.
 
@@ -31,8 +34,8 @@ The name of the PL cookie has been changed, so users will be logged out the firs
 - #445804 Fix logins not peristing anymore after upgrade to beta5.
 
 
-6.x-1.4-beta5
-=============
+6.x-1.4-beta5 (2009-04-25)
+==========================
 
 - #127359 Persistent Login across multisite on subdomains.
 - #339789 Fix translatable texts in schema.
@@ -51,8 +54,8 @@ The name of the PL cookie has been changed, so users will be logged out the firs
 - Minor coding-style issues here and there.
 
 
-6.x-1.4-beta4
-=============
+6.x-1.4-beta4 (2008-10-28)
+==========================
 
 - #327279 Fix redirects to urlencoded paths on PL login.
 - #326279 by sun: Code clean-up.
@@ -67,14 +70,14 @@ The name of the PL cookie has been changed, so users will be logged out the firs
 - There was no beta3.
 
 
-6.x-1.4-beta2
-=============
+6.x-1.4-beta2 (2007-12-20)
+==========================
 
 - The only user-visible change in this version is that when a user clicks 'logout' their PL cookie is deleted.
 
 
-6.x-1.4-beta1
-=============
+6.x-1.4-beta1 (2007-10-11)
+==========================
 
 - Reorganize the Persistent Login database schema and queries to be much more efficient.
 - Move hook_schema to .install from .schema; remove .schema.
@@ -82,7 +85,7 @@ The name of the PL cookie has been changed, so users will be logged out the firs
 - Don't redirect to paths with %252F in them on login.
 
 
-6.x-1.3
-=======
+6.x-1.3 (2007-08-10)
+====================
 
 - First version of Persistent Login for Drupal 6. Functionally identical to Persistent Login 5.x-1.3.
