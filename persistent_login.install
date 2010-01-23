@@ -68,9 +68,12 @@ function persistent_login_install() {
 function persistent_login_uninstall() {
   drupal_uninstall_schema('persistent_login');
 
-  // Delete all module variables and then clear the variables cache.
-  db_query("DELETE FROM {variable} WHERE name LIKE 'persistent\_login\_%'");
-  cache_clear_all('variables', 'cache');
+  // Delete all module variables.
+  variable_del('persistent_login_welcome');
+  variable_del('persistent_login_maxlife');
+  variable_del('persistent_login_maxlogins');
+  variable_del('persistent_login_secure');
+  variable_del('persistent_login_pages');
 }
 
 /**
