@@ -85,6 +85,9 @@ function persistent_login_admin_settings_validate($form, &$form_state) {
   if (!preg_match('`^[-_A-Za-z0-9]+$`', $form_values['persistent_login_cookie_prefix'])) {
     form_set_error('persistent_login_cookie_prefix', t('%name: Characters allowed: ascii letters ([A-Z], [a-z]), digits ([0-9]), hyphens ("-") or underscores ("_").', array('%name' => $form['persistent_login_cookie_prefix']['#title'])));
   }
+  elseif ($form_values['persistent_login_cookie_prefix'] == 'SESS') {
+    form_set_error('persistent_login_cookie_prefix', t('%name: Invalid value. "SESS" is already used by the Drupal session cookie.', array('%name' => $form['persistent_login_cookie_prefix']['#title'])));
+  }
 }
 
 /**
