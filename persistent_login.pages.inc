@@ -27,6 +27,8 @@ function persistent_login_admin_settings() {
   $form['persistent_login_maxlife'] = array(
     '#type' => 'textfield',
     '#title' => t('Days to remember the user'),
+    '#size' => 10,
+    '#maxlength' => 10,
     '#default_value' => variable_get('persistent_login_maxlife', PERSISTENT_LOGIN_MAXLIFE),
     '#description' => t('The maximum number of days for which a persistent login session is valid; afterwards, the user will need to log in again.  Enter 0 for no expiration.'),
   );
@@ -37,6 +39,15 @@ function persistent_login_admin_settings() {
     '#default_value' => variable_get('persistent_login_maxlogins', 10),
     '#options' => drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100)),
     '#description' => t('The maximum number of Persisten Logins remembered per user.'),
+  );
+
+  $form['persistent_login_cookie_prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Cookie name prefix'),
+    '#size' => 40,
+    '#maxlength' => 40,
+    '#default_value' => variable_get('persistent_login_cookie_prefix', 'PERSISTENT_LOGIN_'),
+    '#description' => t('A string used as prefix to build the persistent login cookie name. Characters allowed: ASCII letters ([A-Z], [a-z]), digits ([0-9]), hyphens ("-") or underscores ("_"). Previous cookies stored in user browsers will be lost when changing this value.'),
   );
 
   $form['persistent_login_secure'] = array(
@@ -58,7 +69,22 @@ function persistent_login_admin_settings() {
     '#description' => t("Enter one page per line as Drupal paths.  The '*' character is a wildcard.  Example paths are '<em>blog</em>' for the blog page, '<em>blog/*</em>' for every personal blog, and '<em>blog*</em>' for both. '<em>&lt;front&gt;</em>' is the front page."),
   );
 
+  $form['#validate'] = array('persistent_login_admin_settings_validate');
+
   return system_settings_form($form);
+}
+
+/**
+ * Validate the module settings form.
+ */
+function persistent_login_admin_settings_validate($form, &$form_state) {
+  $form_values = &$form_state['values'];
+  if (!preg_match('`^[0-9]+$`', $form_values['persistent_login_maxlife'])) {
+    form_set_error('persistent_login_maxlife', t('%name: You should specify a valid integer value.', array('%name' => $form['persistent_login_maxlife']['#title'])));
+  }
+  if (!preg_match('`^[-_A-Za-z0-9]+$`', $form_values['persistent_login_cookie_prefix'])) {
+    form_set_error('persistent_login_cookie_prefix', t('%name: Characters allowed: ascii letters ([A-Z], [a-z]), digits ([0-9]), hyphens ("-") or underscores ("_").', array('%name' => $form['persistent_login_cookie_prefix']['#title'])));
+  }
 }
 
 /**

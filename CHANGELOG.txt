@@ -4,6 +4,7 @@
 ===========
 
 - Use variable_del() to remove module variables in hook_uninstall().
+- #685082 Add option to change the persistent login cookie prefix.
 
 
 6.x-1.4 (2010-01-08)

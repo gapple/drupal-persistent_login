@@ -74,6 +74,7 @@ function persistent_login_uninstall() {
   variable_del('persistent_login_maxlogins');
   variable_del('persistent_login_secure');
   variable_del('persistent_login_pages');
+  variable_del('persistent_login_cookie_prefix');
 }
 
 /**
