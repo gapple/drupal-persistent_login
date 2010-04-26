@@ -359,14 +359,16 @@ function _persistent_login_check() {
       // the user was not logged in until now and so the page may have
       // come from the cache.  Also, some other init hook may care.
       // Also, note that we prevent redirections to front page path.
-      if (!isset($_REQUEST['destination']) && drupal_is_front_page()) {
-        drupal_goto('');
+      if (empty($_POST)) {
+        if (!isset($_REQUEST['destination']) && drupal_is_front_page()) {
+          drupal_goto('');
+        }
+        else {
+          $_REQUEST['destination'] = substr(drupal_get_destination(), 12);
+          drupal_goto();
+        }
       }
-      else {
-        $_REQUEST['destination'] = substr(drupal_get_destination(), 12);
-        drupal_goto();
-      }
-      // not reached
+      // Only reached if POST data available.
       return;
     }
     else {

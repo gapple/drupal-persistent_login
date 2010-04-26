@@ -3,8 +3,12 @@
 6.x-1.x-dev
 ===========
 
+Features:
 - Use variable_del() to remove module variables in hook_uninstall().
 - #685082 Add option to change the persistent login cookie prefix. Follow up patch: make sure the PL cookie prefix is not "SESS", which is already used by the Drupal session cookie.
+
+Bugfixes:
+- #775314 by Gabor Hojtsy - Do not redirect if POST data is available.
 
 
 6.x-1.4 (2010-01-08)
