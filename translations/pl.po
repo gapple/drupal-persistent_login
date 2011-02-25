@@ -1,4 +1,3 @@
-# $Id$
 #
 # Polski / Polish translation of persistent_login
 #

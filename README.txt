@@ -1,6 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Persistent Login module for Drupal 6
-;; $Id$
 ;;
 ;; Current Mantainer: markus_petrux (http://drupal.org/user/39593)
 ;; Original Author  : bjaspan (http://drupal.org/user/46413)
