@@ -12,6 +12,7 @@ admin/settings/persistent_login
 ");
 
 define('PERSISTENT_LOGIN_MAXLIFE', 30);
+define('PERSISTENT_LOGIN_VALIDATION_PERIOD', 30);
 
 /**
  * Implementation of hook_help().
@@ -189,7 +190,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
       // persistent_login_check(), $edit['persistent_login'] is also
       // set along with pl_series and pl_expiration.  Either way, issue a
       // new PL cookie, preserving series and expiration if present.
-      if (!empty($edit['persistent_login'])) {
+      if (!empty($edit['persistent_login']) && empty($edit['persistent_login_cache'])) {
         _persistent_login_create_cookie($account, $edit);
       }
       // Assume this is a non-PL login; clear persistent_login_login.
@@ -258,6 +259,8 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
  */
 function persistent_login_cron() {
   _persistent_login_invalidate('cron', 'expires > 0 AND expires < %d', time());
+
+  db_query("DELETE FROM {persistent_login_cache} WHERE expires < %d", time());
 }
 
 /**
@@ -323,16 +326,22 @@ function _persistent_login_check() {
     require_once './includes/path.inc';
     require_once './includes/theme.inc';
 
-    if ($r['pl_token'] === $token) {
-      // Delete the one-time use persistent login cookie.
-      _persistent_login_invalidate('used', "uid = %d AND series = '%s'", $uid, $series);
-
+    if ($r['pl_token'] === $token || _persistent_login_check_cache($uid, $series, $token)) {
       // The Persistent Login cookie is valid.  $r is a 'user form'
       // that contains only name, uid, pl_series, pl_token, and
       // pl_expires.  Add persistent_login so we and other modules can
       // tell what is going on.
-      //
       $r['persistent_login'] = 1;
+
+      // Only remove the current token if it was not valid via the cache.
+      if(!_persistent_login_check_cache($uid, $series, $token)){
+        // Delete the one-time use persistent login cookie.
+        _persistent_login_invalidate('used', "uid = %d AND series = '%s'", $uid, $series);
+      }
+      else{
+        // We will need to know in hook_user('login') to not generate a new token.
+        $r['persistent_login_cached'] = 1;
+      }
 
       // Log in the user.  Use user_external_login() so all the right
       // things happen.  Be sure to override persistent_login_login to
@@ -394,6 +403,37 @@ function _persistent_login_check() {
       return;
     }
   }
+}
+
+/**
+ * Helper function to check the invalidation cache for recently used tokens.
+ *
+ * A single request should only check one PL pair but use an array for
+ * the cache just to be safe.
+ */
+function _persistent_login_check_cache($uid, $series, $token, $ip = null){
+  static $static = array();
+
+  if ($ip == null) {$ip = ip_address();}
+
+  // A multi-dimensional array would be overkill, so concatenate for a unique string.
+  $key = $uid . $series . $token;
+
+  if(!isset($static[$key])){
+    $res =
+      db_result(
+        db_query("SELECT plc.ip FROM {persistent_login_cache} plc " .
+            "WHERE plc.uid = %d " .
+            "AND plc.series = '%s' " .
+            "AND plc.token = '%s' " .
+            "AND plc.expires < %d ",
+          $uid, $series, $token, time()
+        )
+      );
+    $static[$key] = $res;
+  }
+
+  return ($static[$key] == $ip);
 }
 
 /**
@@ -513,6 +553,7 @@ function _persistent_login_match($path) {
 }
 
 function _persistent_login_invalidate($why, $where) {
+  // Any additional arguments are values for the where clause
   $vals = func_get_args();
   array_shift($vals);
   array_shift($vals);
@@ -522,6 +563,18 @@ function _persistent_login_invalidate($why, $where) {
     $vals2 = $vals;
     array_unshift($vals2, time(), $why);
     db_query("INSERT INTO {persistent_login_history} (uid, series, token, expires, at, why) SELECT uid, series, token, expires, %d, '%s' FROM {persistent_login} WHERE ". $where, $vals2);
+  }
+
+  // save used entries in a short-lifetime cache
+  if($why == 'used'){
+    $vals3 = $vals;
+    array_unshift($vals3,
+      time() + PERSISTENT_LOGIN_VALIDATION_PERIOD,
+      ip_address()
+    );
+
+    db_query("INSERT INTO {persistent_login_cache} (uid, series, token, expires, ip) " .
+             "SELECT uid, series, token, %d, '%s' FROM {persistent_login} WHERE ". $where, $vals3);
   }
 
   db_query('DELETE FROM {persistent_login} WHERE '. $where, $vals);

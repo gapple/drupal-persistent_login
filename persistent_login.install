@@ -32,6 +32,31 @@ function persistent_login_schema() {
       'uid_expires' => array('uid', 'expires'),
     ),
   );
+  $schema['persistent_login_cache'] = array(
+    'description' => "Stores recently used tokens so that multipe requests don't trigger false errors.",
+    'fields' => array(
+      'uid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1,
+        'description' => 'The {users}.uid this row is for.',
+      ),
+      'series' => array('type' => 'varchar', 'length' => 32, 'not null' => 1,
+        'description' => 'The long-lived series identifying the PL token sequence.',
+      ),
+      'token' => array('type' => 'varchar', 'length' => 32, 'not null' => 1,
+        'description' => 'The single-use PL login token.',
+      ),
+      'expires' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1,
+        'description' => 'The expiration time for this cache entry.',
+      ),
+      'ip' => array('type' => 'char', 'length' => 15, 'not null' => 1,
+        'description' => 'The IP address used to invalidate the token.'
+      ),
+    ),
+    'primary key' => array('uid', 'series', 'token'),
+    'indexes' => array(
+      'expires' => array('expires'),
+      'uid_expires' => array('uid', 'expires'),
+    ),
+  );
   $schema['persistent_login_history'] = array(
     'description' => 'Stores previous entries from the {persistent_login} table just before they are erased; currently used.  The uid, series, token, and expires fields are copied verbatim.',
     'fields' => array(
@@ -134,6 +159,42 @@ function persistent_login_update_6001() {
   $ret = array();
 
   db_add_index($ret, 'persistent_login', 'uid_expires', array('uid', 'expires'));
+
+  return $ret;
+}
+
+/**
+ * Add new invalidation cache table
+ */
+function persistent_login_update_6001() {
+  $ret = array();
+
+  $schema['persistent_login_cache'] = array(
+    'description' => "Stores recently used tokens so that multipe requests don't trigger false errors.",
+    'fields' => array(
+      'uid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1,
+        'description' => 'The {users}.uid this row is for.',
+      ),
+      'series' => array('type' => 'varchar', 'length' => 32, 'not null' => 1,
+        'description' => 'The long-lived series identifying the PL token sequence.',
+      ),
+      'token' => array('type' => 'varchar', 'length' => 32, 'not null' => 1,
+        'description' => 'The single-use PL login token.',
+      ),
+      'expires' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1,
+        'description' => 'The expiration time for this cache entry.',
+      ),
+      'ip' => array('type' => 'char', 'length' => 15, 'not null' => 1,
+        'description' => 'The IP address used to invalidate the token.'
+      ),
+    ),
+    'primary key' => array('uid', 'series', 'token'),
+    'indexes' => array(
+      'expires' => array('expires'),
+      'uid_expires' => array('uid', 'expires'),
+    ),
+  );
+  db_create_table($ret, 'persistent_login_cache', $schema['persistent_login_cache']);
 
   return $ret;
 }
