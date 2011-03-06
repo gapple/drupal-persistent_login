@@ -350,7 +350,7 @@ function _persistent_login_check() {
 
       // Only welcome the user back once per session.
       if (empty($_SESSION['persistent_login_welcomed']) && variable_get('persistent_login_welcome', TRUE)) {
-        drupal_set_message(t('Welcome back, %name.', array('%name' => $r['name'])));
+        drupal_set_message(t('Welcome back, !name.', array('!name' => theme('username', $account))));
       }
       $_SESSION['persistent_login_welcomed'] = TRUE;
 
