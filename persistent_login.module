@@ -253,6 +253,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
       }
       // If the password is modified, fall through to wipe all persistent logins.
     case 'delete':
+      _persistent_login_setcookie($cookie_name, '', time() - 86400);
       _persistent_login_invalidate($op, 'uid = %d', $account->uid);
       unset($_SESSION['persistent_login_check']);
       unset($_SESSION['persistent_login_login']);
@@ -323,10 +324,12 @@ function _persistent_login_check() {
     $r = db_fetch_array($res);
     if (!is_array($r) || count($r) == 0) {
       // $uid:$series is invalid
+      _persistent_login_setcookie($cookie_name, '', time() - 86400);
       return;
     }
     else if ($r['pl_expires'] > 0 && $r['pl_expires'] < time()) {
       // $uid:$series has expired
+      _persistent_login_setcookie($cookie_name, '', time() - 86400);
       return;
     }
 
@@ -393,6 +396,7 @@ function _persistent_login_check() {
 
       // Reset PL state in $_SESSION.
       $d = array();
+      _persistent_login_setcookie($cookie_name, '', time() - 86400);
       _persistent_login_invalidate('stolen', 'uid = %d', $uid);
       persistent_login_user('logout', $d, $user);
       // Delete all open sessions for this user.  Use $uid from the
