@@ -341,9 +341,9 @@ function _persistent_login_check() {
     }
 
     // now, any outcome requires this
-    require_once DRUPAL_ROOT . '/' . './includes/common.inc';
-    require_once DRUPAL_ROOT . '/' . './includes/path.inc';
-    require_once DRUPAL_ROOT . '/' . './includes/theme.inc';
+    require_once DRUPAL_ROOT . '/' . 'includes/common.inc';
+    require_once DRUPAL_ROOT . '/' . 'includes/path.inc';
+    require_once DRUPAL_ROOT . '/' . 'includes/theme.inc';
 
     if ($r['pl_token'] === $token) {
       // Delete the one-time use persistent login cookie.
