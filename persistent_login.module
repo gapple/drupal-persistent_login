@@ -257,7 +257,8 @@ function persistent_login_user_presave(&$edit, $account, $category) {
   if (empty($edit['pass'])) {
     //break;
   }
-  // If the password is modified, fall through to wipe all persistent logins.
+  // If the password is modified, wipe all persistent logins.
+  persistent_login_user_cancel($edit, $account, $category);
 }
 
 /**
