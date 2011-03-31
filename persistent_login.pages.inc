@@ -8,12 +8,12 @@
 /**
  * Module settings form.
  */
-function persistent_login_admin_settings() {
+function persistent_login_admin_settings($form, &$form_state) {
   $form = array();
 
   // @todo: Can we move this to hook_requirements() ?
   if (ini_get('session.cookie_lifetime') > 0) {
-    drupal_set_message(t('Your site\'s <em>session.cookie_lifetime</em> PHP setting is %life.  When using Persistent Login, it should be 0 so that PHP sessions end when the user closes his/her browser.  You can change this setting by editing <strong>%file</strong>.', array('%life' => ini_get('session.cookie_lifetime'), '%file' => conf_path() .'/settings.php')), 'error');
+    drupal_set_message(t('Your site\'s <em>session.cookie_lifetime</em> PHP setting is %life.  When using Persistent Login, it should be 0 so that PHP sessions end when the user closes his/her browser.  You can change this setting by editing <strong>%file</strong>.', array('%life' => ini_get('session.cookie_lifetime'), '%file' => conf_path() . '/settings.php')), 'error');
   }
 
   $form['persistent_login_welcome'] = array(
@@ -106,8 +106,8 @@ function persistent_login_erase($uid = NULL) {
     $uid = $user->uid;
   }
   if ($user->uid == $uid || user_access('administer Persistent Login')) {
-    _persistent_login_invalidate('erase', 'uid = %d', $uid);
-    drupal_goto('user/'. $uid);
+    _persistent_login_invalidate('erase', 'uid = :uid', array(':uid' => $uid));
+    drupal_goto('user/' . $uid);
   }
   drupal_access_denied();
 }
@@ -127,7 +127,7 @@ function persistent_login_form_after_build($form, &$form_state) {
   // If we don't have a submit button, then it's a sign someone else altered
   // the login form in a way that cannot be submitted, so we remove the
   // "Remember me" checkbox we added in hook_form_alter() and quit.
-  if (!isset($form['submit'])) {
+  if (!isset($form['actions']['submit'])) {
     unset($form_reference['persistent_login']);
     return $form;
   }
@@ -156,10 +156,10 @@ function persistent_login_form_after_build($form, &$form_state) {
   unset($form_reference['#sorted']);
 
   // Adjust the tabindex of the plain login form.
-  if (isset($form['submit']['#attributes']) && isset($form['submit']['#attributes']['tabindex'])) {
-    $tabindex = (int)$form['submit']['#attributes']['tabindex'];
+  if (isset($form['actions']['submit']['#attributes']) && isset($form['actions']['submit']['#attributes']['tabindex'])) {
+    $tabindex = (int) $form['actions']['submit']['#attributes']['tabindex'];
     $form_reference['persistent_login']['#attributes']['tabindex'] = $tabindex;
-    $form['submit']['#attributes']['tabindex'] = $tabindex + 1;
+    $form['actions']['submit']['#attributes']['tabindex'] = $tabindex + 1;
   }
 
   return $form;
