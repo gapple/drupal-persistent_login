@@ -301,17 +301,14 @@ function _persistent_login_check() {
   // Do not interfere with login/logout pages. Note that we're performing this
   // check during hook_boot(), Drupal has not already normalized the path, so
   // we need to take care of the path prefix defined for language negotiation.
-  /*$mode = variable_get('language_negotiation', LANGUAGE_NEGOTIATION_NONE);
-  if ($mode == LANGUAGE_NEGOTIATION_PATH_DEFAULT || $mode == LANGUAGE_NEGOTIATION_PATH) {
-    foreach (array_keys(language_list('prefix')) as $prefix) {
+  $mode = variable_get('language_negotiation_language', array());
+  if (isset($mode['locale-url'])) {
+    $ll_enabled = language_list('enabled');
+    foreach (array_keys($ll_enabled[1]) as $prefix) {
       if (!empty($prefix) && preg_match('`^(?:' . preg_quote($prefix) . '/){0,1}(?:user/login|user/logout)$`', $path)) {
         return;
       }
     }
-  }*/
-  // TODO.
-  if (false) {
-
   }
   elseif ($path == 'user/login' || $path == 'user/logout') {
     return;
