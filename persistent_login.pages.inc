@@ -98,14 +98,14 @@ function persistent_login_admin_settings_validate($form, &$form_state) {
  * @param $uid
  *  The user id for whom to erase PL records.  A user can specify any
  *  uid for the callback, but only the current user's id will work
- *  unless the user has 'administer Persistent Login' permission.
+ *  unless the user has 'administer persistent login' permission.
  */
 function persistent_login_erase($uid = NULL) {
   global $user;
   if (!isset($uid)) {
     $uid = $user->uid;
   }
-  if ($user->uid == $uid || user_access('administer Persistent Login')) {
+  if ($user->uid == $uid || user_access('administer persistent login')) {
     _persistent_login_invalidate('erase', 'uid = :uid', array(':uid' => $uid));
     drupal_goto('user/' . $uid);
   }

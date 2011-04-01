@@ -27,9 +27,8 @@ function persistent_login_help($path, $arg) {
  */
 function persistent_login_permission() {
   return array(
-    'administer Persistent Login' => array(
-      'title' => t('administer Persistent Login'),
-      'description' => t('TODO Add a description for \'administer Persistent Login\''),
+    'administer persistent login' => array(
+      'title' => t('Administer Persistent Login'),
     ),
   );
 }
@@ -83,7 +82,7 @@ function persistent_login_menu() {
     'description' => 'Control Persistent Login session lifetime and restricted pages.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('persistent_login_admin_settings'),
-    'access arguments' => array('administer Persistent Login'),
+    'access arguments' => array('administer persistent login'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'persistent_login.pages.inc',
   );
@@ -99,7 +98,7 @@ function persistent_login_erase_access($uid = NULL) {
     if (empty($uid)) {
       $uid = $user->uid;
     }
-    if ($user->uid == $uid || user_access('administer Persistent Login')) {
+    if ($user->uid == $uid || user_access('administer persistent login')) {
       return TRUE;
     }
   }
@@ -223,7 +222,7 @@ function persistent_login_user_logout($account) {
  */
 function persistent_login_user_view($account, $view_mode) {
   global $user;
-  if ($user->uid == $account->uid || user_access('administer Persistent Login')) {
+  if ($user->uid == $account->uid || user_access('administer persistent login')) {
     $n = db_query('SELECT COUNT(*) FROM {persistent_login} WHERE uid = :uid AND (expires = 0 OR expires > :expires)', array(':uid' => $account->uid, ':expires' => REQUEST_TIME))->fetchField();
     if ($n > 0) {
       if (!isset($account->content['security'])) {
