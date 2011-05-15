@@ -32,6 +32,13 @@ function persistent_login_admin_settings() {
     '#description' => t('The maximum number of days for which a persistent login session is valid; afterwards, the user will need to log in again.  Enter 0 for no expiration.'),
   );
 
+  $form['persistent_login_extend_expiry'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Extend the expiry of persistent logins when used.'),
+    '#default_value' => variable_get('persistent_login_extend_expiry', 0),
+    '#description' => t('If set, when a user logs in with a persistent login cookie the series\' validity will be extended by the expiry period from the current time.'),
+  );
+
   $form['persistent_login_maxlogins'] = array(
     '#type' => 'select',
     '#title' => t('Remembered logins per user'),

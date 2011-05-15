@@ -413,9 +413,13 @@ function _persistent_login_create_cookie($acct, $edit = array()) {
     _persistent_login_invalidate('cleanup', "uid = %d AND series = '%s'", $uid, $series);
   }
 
-  $token   = drupal_get_token(uniqid(mt_rand(), TRUE));
   $days    = variable_get('persistent_login_maxlife', PERSISTENT_LOGIN_MAXLIFE);
-  $expires = (isset($edit['pl_expires']) ? $edit['pl_expires'] : (($days > 0) ? time() + $days * 86400 : 0));
+  $expires = isset($edit['pl_expires'])? $edit['pl_expires'] : 0;
+  if ($days > 0 && (!$expires || variable_get('persistent_login_extend_expiry', 0))) {
+      $expires = time() + $days * 86400;
+  }
+
+  $token   = drupal_get_token(uniqid(mt_rand(), TRUE));
   $series  = (isset($edit['pl_series']) ? $edit['pl_series'] : drupal_get_token(uniqid(mt_rand(), TRUE)));
 
   _persistent_login_setcookie($cookie_name, $acct->uid .':'. $series .':'. $token, $expires > 0 ? $expires : 2147483647);
