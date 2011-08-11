@@ -37,7 +37,7 @@ function persistent_login_admin_settings($form, &$form_state) {
     '#title' => t('Remembered logins per user'),
     '#default_value' => variable_get('persistent_login_maxlogins', 10),
     '#options' => drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100)),
-    '#description' => t('The maximum number of Persisten Logins remembered per user.'),
+    '#description' => t('The maximum number of Persistent Logins remembered per user.'),
   );
 
   $form['persistent_login_cookie_prefix'] = array(
