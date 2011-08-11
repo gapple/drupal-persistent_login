@@ -543,12 +543,11 @@ function _persistent_login_match($path) {
 function _persistent_login_invalidate($why, $where, $args) {
   // This is currently only for debugging but could be an audit log.
   if (FALSE) {
-    $vals2 = $vals;
-    array_unshift($vals2, REQUEST_TIME, $why);
-    // TODO Please convert this statement to the D7 database API syntax.
-    db_query("INSERT INTO {persistent_login_history} (uid, series, token, expires, at, why) SELECT uid, series, token, expires, %d, '%s' FROM {persistent_login} WHERE " . $where, $vals2);
+    $args2 = $args;
+    $args2[':at'] = REQUEST_TIME;
+    $args2[':why'] = $why;
+    db_query("INSERT INTO {persistent_login_history} (uid, series, token, expires, at, why) SELECT uid, series, token, expires, :at, :why FROM {persistent_login} WHERE " . $where, $args2);
   }
 
-  // TODO Please convert this statement to the D7 database API syntax.
   db_query('DELETE FROM {persistent_login} WHERE ' . $where, $args);
 }
