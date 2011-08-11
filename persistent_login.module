@@ -60,7 +60,6 @@ function persistent_login_init() {
     $_SESSION['persistent_login_reauth'] = TRUE;
     unset($_GET['destination']);
     drupal_set_message(t('Please verify your username and password to access this page.'), 'error');
-    // TODO drupal_get_destination() needs to be an array of keys and values instead of a string.
     drupal_goto('user/login', array('query' => drupal_get_destination()));
   }
 }
