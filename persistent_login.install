@@ -73,12 +73,7 @@ function persistent_login_uninstall() {
 function persistent_login_update_7001() {
   db_change_field('persistent_login', 'series', 'series', array('type' => 'varchar', 'length' => 43, 'not null' => TRUE));
   db_change_field('persistent_login', 'token', 'token', array('type' => 'varchar', 'length' => 43, 'not null' => TRUE));
-}
 
-/**
- * Change length of series and token fields to accomodate longer d7 hashes.
- */
-function persistent_login_update_7002() {
   db_change_field('persistent_login_history', 'series', 'series', array('type' => 'varchar', 'length' => 43, 'not null' => TRUE));
   db_change_field('persistent_login_history', 'token', 'token', array('type' => 'varchar', 'length' => 43, 'not null' => TRUE));
 }
