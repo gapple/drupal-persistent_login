@@ -34,18 +34,19 @@ function persistent_login_permission() {
 }
 
 /**
- * Implements hook_boot().  Before a cached page is served,().
- * perform a Persistent Login if appropriate.  Persistent Login must
- * operate during boot because if page caching is enabled, other hooks
- * are never invoked unless the user is already logged in.
+ * Implements hook_boot().
+ * Before a cached page is served, perform a Persistent Login if appropriate.
+ * Persistent Login must operate during boot because if page caching is enabled,
+ * other hooks are never invoked unless the user is already logged in.
  */
 function persistent_login_boot() {
   _persistent_login_check();
 }
 
 /**
- * Implements hook_init().  Before the menu system takes().
- * control, perform a Persistent Login if appropriate.
+ * Implements hook_init().
+ * Before the menu system takes control, perform a Persistent Login if
+ * appropriate.
  */
 function persistent_login_init() {
   global $user;
@@ -277,8 +278,8 @@ function persistent_login_cron() {
 }
 
 /**
- * _persistent_login_check().  Do the real work.  Note that we may be
- * in BOOTSTRAP_PAGE_CACHE mode with few modules loaded.
+ * Do the real work.  Note that we may be in BOOTSTRAP_PAGE_CACHE mode with
+ * few modules loaded.
  *
  * If a non-logged in user has a valid Persistent Login cookie, log her in,
  * disable the old cookie, and issue a new one for next time.  Then
@@ -501,16 +502,14 @@ function _persistent_login_get_cookie_name() {
 }
 
 /**
- * _persistent_login_match()
- *
- * check the page past and see if it should be secure or insecure.
+ * Check the page passsed and see if it should be secure or insecure.
  *
  * @param $path
- *  the path of the page to check.
+ *  The path of the page to check.
  *
  * @return
- *  0 - page should be insecure.
- *  1 - page should be secure.
+ *  0 - Page should be insecure.
+ *  1 - Page should be secure.
  */
 function _persistent_login_match($path) {
   $secure = variable_get('persistent_login_secure', 1);
