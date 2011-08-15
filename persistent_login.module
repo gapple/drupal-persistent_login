@@ -278,6 +278,11 @@ function persistent_login_user_cancel($edit, $account, $method) {
  */
 function persistent_login_cron() {
   _persistent_login_invalidate('cron', 'expires > 0 AND expires < :expires', array(':expires' => REQUEST_TIME));
+
+  // Remove old login invalidation history
+  if (0 < ($history_days = variable_get('persistent_login_history', 0))) {
+    db_query('DELETE FROM {persistent_login_history} WHERE at < :time', array(':time' => REQUEST_TIME - 86400 * $history_days));
+  }
 }
 
 /**
@@ -544,8 +549,8 @@ function _persistent_login_match($path) {
 }
 
 function _persistent_login_invalidate($why, $where, $args) {
-  // This is currently only for debugging but could be an audit log.
-  if (FALSE) {
+
+  if (variable_get('persistent_login_history', 0)) {
     $args2 = $args;
     $args2[':at'] = REQUEST_TIME;
     $args2[':why'] = $why;
