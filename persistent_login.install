@@ -33,7 +33,7 @@ function persistent_login_schema() {
     ),
   );
   $schema['persistent_login_history'] = array(
-    'description' => 'Stores previous entries from the {persistent_login} table just before they are erased; currently used.  The uid, series, token, and expires fields are copied verbatim.',
+    'description' => 'Stores previous entries from the {persistent_login} table just before they are erased.  The uid, series, token, and expires fields are copied verbatim.',
     'fields' => array(
       'uid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1),
       'series' => array('type' => 'varchar', 'length' => 32, 'not null' => 1),
@@ -74,6 +74,7 @@ function persistent_login_uninstall() {
   variable_del('persistent_login_secure');
   variable_del('persistent_login_pages');
   variable_del('persistent_login_cookie_prefix');
+  variable_del('persistent_login_history');
 }
 
 /**

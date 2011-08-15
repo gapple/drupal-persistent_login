@@ -67,6 +67,14 @@ function persistent_login_admin_settings() {
     '#rows' => 5,
     '#description' => t("Enter one page per line as Drupal paths.  The '*' character is a wildcard.  Example paths are '<em>blog</em>' for the blog page, '<em>blog/*</em>' for every personal blog, and '<em>blog*</em>' for both. '<em>&lt;front&gt;</em>' is the front page."),
   );
+  $form['persistent_login_history'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Days to keep a log of persistent login actions'),
+    '#default_value' => variable_get('persistent_login_history', 0),
+    '#size' => 4,
+    '#maxlength' => 10,
+    '#description' => t('The number of days to keep an entry in the persistent_login_history table for each time a login is invalidated, including when a user logs in.  Entering 0 will disable logging.  This setting is intended for debugging purposes.'),
+  );
 
   $form['#validate'] = array('persistent_login_admin_settings_validate');
 
@@ -86,6 +94,9 @@ function persistent_login_admin_settings_validate($form, &$form_state) {
   }
   elseif ($form_values['persistent_login_cookie_prefix'] == 'SESS') {
     form_set_error('persistent_login_cookie_prefix', t('%name: Invalid value. "SESS" is already used by the Drupal session cookie.', array('%name' => $form['persistent_login_cookie_prefix']['#title'])));
+  }
+  if (!preg_match('`^[0-9]+$`', $form_values['persistent_login_history'])) {
+    form_set_error('persistent_login_history', t('%name: You should specify a valid integer value.', array('%name' => $form['persistent_login_history']['#title'])));
   }
 }
 

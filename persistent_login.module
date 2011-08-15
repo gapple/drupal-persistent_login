@@ -258,6 +258,11 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
  */
 function persistent_login_cron() {
   _persistent_login_invalidate('cron', 'expires > 0 AND expires < %d', time());
+
+  // Remove old login invalidation history
+  if (0 < ($history_days = variable_get('persistent_login_history', 0))) {
+    db_query('DELETE FROM {persistent_login_history} WHERE at < %d', time() - 86400 * $history_days);
+  }
 }
 
 /**
@@ -518,7 +523,7 @@ function _persistent_login_invalidate($why, $where) {
   array_shift($vals);
 
   // This is currently only for debugging but could be an audit log.
-  if (FALSE) {
+  if (variable_get('persistent_login_history', 0)) {
     $vals2 = $vals;
     array_unshift($vals2, time(), $why);
     db_query("INSERT INTO {persistent_login_history} (uid, series, token, expires, at, why) SELECT uid, series, token, expires, %d, '%s' FROM {persistent_login} WHERE ". $where, $vals2);
