@@ -90,6 +90,13 @@ function persistent_login_menu() {
 }
 
 /**
+ * Implements hook_menu_alter().
+ */
+function persistent_login_menu_alter(&$items) {
+  $items['user/register']['access callback'] = 'persistent_login_user_reauth_access';
+}
+
+/**
  * Access callback to check permission to erase user's Persistent Login records.
  */
 function persistent_login_erase_access($uid = NULL) {
@@ -558,4 +565,12 @@ function _persistent_login_invalidate($why, $where, $args) {
   }
 
   db_query('DELETE FROM {persistent_login} WHERE ' . $where, $args);
+}
+
+/**
+* Disable 'Create Account' link if a user is logged in via PL and trying to
+* access a PL restricted page.
+*/
+function persistent_login_user_reauth_access() {
+return user_is_anonymous() && empty($_SESSION['persistent_login_reauth']);
 }
