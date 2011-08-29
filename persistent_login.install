@@ -78,3 +78,16 @@ function persistent_login_update_7001() {
   db_change_field('persistent_login_history', 'series', 'series', array('type' => 'varchar', 'length' => 43, 'not null' => TRUE));
   db_change_field('persistent_login_history', 'token', 'token', array('type' => 'varchar', 'length' => 43, 'not null' => TRUE));
 }
+
+/**
+ * Update secure pages variable with new path to PL settings.
+ */
+function persistent_login_update_7002(){
+  $pl_secure_paths = variable_get('persistent_login_pages', '');
+  if (!empty($pl_secure_paths)) {
+    variable_set(
+      'persistent_login_pages',
+      str_replace('admin/settings/persistent_login', 'admin/config/system/persistent_login', $pl_secure_paths)
+    );
+  }
+}

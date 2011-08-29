@@ -8,7 +8,7 @@
 define('PERSISTENT_LOGIN_SECURE_PATHS', "user/*/*
 user/*/address
 cart/checkout
-admin/settings/persistent_login
+admin/config/system/persistent_login
 ");
 
 define('PERSISTENT_LOGIN_MAXLIFE', 30);
