@@ -260,7 +260,7 @@ function persistent_login_user_view($account, $view_mode) {
  * Implements hook_user_presave().
  */
 function persistent_login_user_presave(&$edit, $account, $category) {
-  if (!empty($edit['pass'])) {
+  if (isset($account->uid) && !empty($edit['pass'])) {
     // If the password is modified, wipe all persistent logins.
     _persistent_login_invalidate('user_edit', 'uid = :uid', array(':uid' => $account->uid));
 
