@@ -1,7 +1,3 @@
 name = Persistent Login
 description = Provides a 'Remember Me' checkbox in the login form.
 core = 7.x
-
-files[] = persistent_login.install
-files[] = persistent_login.module
-files[] = persistent_login.pages.inc
