@@ -314,8 +314,6 @@ function _persistent_login_check() {
   $cookie_name = _persistent_login_get_cookie_name();
 
   if ($user->uid == 0 && isset($_COOKIE[$cookie_name]) && !isset($_SESSION['persistent_login_check'])) {
-    // For efficiency, only check once per session unless something changes.
-    $_SESSION['persistent_login_check'] = TRUE;
 
     list($uid, $series, $token) = explode(':', $_COOKIE[$cookie_name]);
 
@@ -339,6 +337,9 @@ function _persistent_login_check() {
     require_once './includes/theme.inc';
 
     if ($r['pl_token'] === $token) {
+      // For efficiency, only check once per session unless something changes.
+      $_SESSION['persistent_login_check'] = TRUE;
+
       // Delete the one-time use persistent login cookie.
       _persistent_login_invalidate('used', "uid = %d AND series = '%s'", $uid, $series);
 
