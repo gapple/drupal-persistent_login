@@ -93,7 +93,7 @@ function persistent_login_menu() {
  * Implements hook_menu_alter().
  */
 function persistent_login_menu_alter(&$items) {
-  $items['user/register']['access callback'] = 'persistent_login_user_reauth_access';
+  $items['user/register']['access callback'] = 'persistent_login_user_register_access';
 }
 
 /**
@@ -568,9 +568,9 @@ function _persistent_login_invalidate($why, $where, $args) {
 }
 
 /**
-* Disable 'Create Account' link if a user is logged in via PL and trying to
-* access a PL restricted page.
-*/
-function persistent_login_user_reauth_access() {
-return user_is_anonymous() && empty($_SESSION['persistent_login_reauth']);
+ * Disable 'Create Account' link if a user is logged in via PL and trying to
+ * access a PL restricted page.
+ */
+function persistent_login_user_register_access() {
+  return user_register_access() && empty($_SESSION['persistent_login_reauth']);
 }
