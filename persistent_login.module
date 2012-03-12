@@ -87,8 +87,8 @@ function persistent_login_menu() {
  * Implementation of hook_menu_alter().
  */
 function persistent_login_menu_alter(&$items) {
-  $items['user/password']['access callback'] = 'persistent_login_user_reauth_access';
-  $items['user/register']['access callback'] = 'persistent_login_user_reauth_access';
+  $items['user/password']['access callback'] = 'persistent_login_user_password_access';
+  $items['user/register']['access callback'] = 'persistent_login_user_register_access';
 }
 
 /**
@@ -538,10 +538,19 @@ function _persistent_login_invalidate($why, $where) {
 
   db_query('DELETE FROM {persistent_login} WHERE '. $where, $vals);
 }
+
 /**
- * Disable 'Request New Password' and 'Create Account' links if a user is
- * logged in via PL and trying to access a PL restricted page.
+ * Disable 'Create Account' page if a user is logged in via PL and trying to
+ * access a PL restricted page.
  */
-function persistent_login_user_reauth_access() {
+function persistent_login_user_register_access() {
+  return user_register_access() && empty($_SESSION['persistent_login_reauth']);
+}
+
+/**
+ * Disable 'Request New Password' page if a user is logged in via PL and trying
+ * to access a PL restricted page.
+ */
+function persistent_login_user_password_access() {
   return user_is_anonymous() && empty($_SESSION['persistent_login_reauth']);
 }
