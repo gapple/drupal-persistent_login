@@ -210,7 +210,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
     case 'logout':
       $cookie_name = _persistent_login_get_cookie_name();
       if (!empty($_COOKIE[$cookie_name])) {
-        _persistent_login_setcookie($cookie_name, '', time() - 86400);
+        _persistent_login_clearcookie();
         unset($_SESSION['persistent_login_check']);
         unset($_SESSION['persistent_login_login']);
         unset($_SESSION['persistent_login_reauth']);
@@ -253,7 +253,7 @@ function persistent_login_user($op, &$edit, &$account, $category = NULL) {
       }
       // If the password is modified, fall through to wipe all persistent logins.
     case 'delete':
-      _persistent_login_setcookie($cookie_name, '', time() - 86400);
+      _persistent_login_clearcookie();
       _persistent_login_invalidate($op, 'uid = %d', $account->uid);
       unset($_SESSION['persistent_login_check']);
       unset($_SESSION['persistent_login_login']);
@@ -324,12 +324,12 @@ function _persistent_login_check() {
     $r = db_fetch_array($res);
     if (!is_array($r) || count($r) == 0) {
       // $uid:$series is invalid
-      _persistent_login_setcookie($cookie_name, '', time() - 86400);
+      _persistent_login_clearcookie();
       return;
     }
     else if ($r['pl_expires'] > 0 && $r['pl_expires'] < time()) {
       // $uid:$series has expired
-      _persistent_login_setcookie($cookie_name, '', time() - 86400);
+      _persistent_login_clearcookie();
       return;
     }
 
@@ -396,7 +396,7 @@ function _persistent_login_check() {
 
       // Reset PL state in $_SESSION.
       $d = array();
-      _persistent_login_setcookie($cookie_name, '', time() - 86400);
+      _persistent_login_clearcookie();
       _persistent_login_invalidate('stolen', 'uid = %d', $uid);
       persistent_login_user('logout', $d, $user);
       // Delete all open sessions for this user.  Use $uid from the
@@ -434,7 +434,7 @@ function _persistent_login_create_cookie($acct, $edit = array()) {
   $expires = (isset($edit['pl_expires']) ? $edit['pl_expires'] : (($days > 0) ? time() + $days * 86400 : 0));
   $series  = (isset($edit['pl_series']) ? $edit['pl_series'] : drupal_get_token(uniqid(mt_rand(), TRUE)));
 
-  _persistent_login_setcookie($cookie_name, $acct->uid .':'. $series .':'. $token, $expires > 0 ? $expires : 2147483647);
+  _persistent_login_setcookie($acct->uid .':'. $series .':'. $token, $expires > 0 ? $expires : 2147483647);
 
   db_query("INSERT INTO {persistent_login} (uid, series, token, expires) VALUES (%d, '%s', '%s', %d)", $acct->uid, $series, $token, $expires);
   if (db_affected_rows() != 1) {
@@ -456,19 +456,25 @@ function _persistent_login_create_cookie($acct, $edit = array()) {
 }
 
 /**
- * Set a cookie with the same options as the session cookie.
+ * Set the persistent login cookie with the same options as the session cookie.
  *
- * @param $name
- *  The name of the cookie.
  * @param $value
  *  The value to store in the cookie.
  * @param $expire
  *   The time the cookie expires. This is a Unix timestamp so is in number of seconds
  *   since the epoch. By default expires when the browser is closed.
  */
-function _persistent_login_setcookie($name, $value, $expire = 0) {
+function _persistent_login_setcookie($value, $expire = 0) {
+  $name = _persistent_login_get_cookie_name();
   $params = session_get_cookie_params();
   setcookie($name, $value, $expire, $params['path'], $params['domain'], $params['secure']);
+}
+
+/**
+ * Remove the persistent login cookie.
+ */
+function _persistent_login_clearcookie() {
+  _persistent_login_setcookie('', time() - 86400);
 }
 
 /**
