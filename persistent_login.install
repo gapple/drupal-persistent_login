@@ -69,6 +69,27 @@ function persistent_login_uninstall() {
 }
 
 /**
+ * Implementation of hook_requirements().
+ */
+function persistent_login_requirements($phase) {
+  $requirements = array();
+  switch ($phase) {
+    case 'runtime':
+      $lifetime = ini_get('session.cookie_lifetime');
+      if ($lifetime > 0) {
+        $requirements['persistent_login'] = array(
+            'title' => t('PHP session cookie lifetime'),
+            'severity' => REQUIREMENT_ERROR,
+            'description' => _persistent_login_get_config_warning_msg(),
+            'value' => $lifetime,
+        );
+      }
+      break;
+  }
+  return $requirements;
+}
+
+/**
  * Change length of series and token fields to accomodate longer d7 hashes.
  */
 function persistent_login_update_7001() {

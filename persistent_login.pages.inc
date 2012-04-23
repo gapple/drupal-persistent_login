@@ -11,9 +11,8 @@
 function persistent_login_admin_settings($form, &$form_state) {
   $form = array();
 
-  // @todo: Can we move this to hook_requirements() ?
   if (ini_get('session.cookie_lifetime') > 0) {
-    drupal_set_message(t('Your site\'s <em>session.cookie_lifetime</em> PHP setting is %life.  When using Persistent Login, it should be 0 so that PHP sessions end when the user closes his/her browser.  You can change this setting by editing <strong>%file</strong>.', array('%life' => ini_get('session.cookie_lifetime'), '%file' => conf_path() . '/settings.php')), 'error');
+    drupal_set_message(_persistent_login_get_config_warning_msg(), 'error');
   }
 
   $form['persistent_login_welcome'] = array(
