@@ -1,3 +1,5 @@
 name = Persistent Login
 description = Provides a 'Remember Me' checkbox in the login form.
 core = 7.x
+configure = admin/config/system/persistent_login
+
