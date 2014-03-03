@@ -22,6 +22,13 @@ function persistent_login_admin_settings($form, &$form_state) {
     '#description' => t('If checked, the message \'Welcome back, <em>username</em>\' will be displayed each time a new login session is created via a Persistent Login cookie.'),
   );
 
+  $form['persistent_login_hidden'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide the remember me checkbox'),
+    '#default_value' => variable_get('persistent_login_hidden', FALSE),
+    '#description' => t('If it is checked, then the checkbox is not displayed in the login forms and the remember me feature is always enabled.'),
+  );
+
   $form['persistent_login_maxlife'] = array(
     '#type' => 'textfield',
     '#title' => t('Days to remember the user'),

@@ -60,6 +60,7 @@ function persistent_login_schema() {
 function persistent_login_uninstall() {
   // Delete all module variables.
   variable_del('persistent_login_welcome');
+  variable_del('persistent_login_hidden');
   variable_del('persistent_login_maxlife');
   variable_del('persistent_login_maxlogins');
   variable_del('persistent_login_secure');

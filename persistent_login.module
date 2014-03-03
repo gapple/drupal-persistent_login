@@ -164,12 +164,22 @@ function persistent_login_form_alter(&$form, $form_state, $form_id) {
       '#type' => 'checkbox',
       '#title' => t('Remember me'),
     );
+    if (variable_get('persistent_login_hidden', FALSE)) {
+        $form['account']['persistent_login']['#prefix'] = '<div style="display:none;">';
+        $form['account']['persistent_login']['#value'] = '1';
+        $form['account']['persistent_login']['#suffix'] = '</div>';
+    }
   }
   else {
     $form['persistent_login'] = array(
       '#type' => 'checkbox',
       '#title' => t('Remember me'),
     );
+      if (variable_get('persistent_login_hidden', FALSE)) {
+        $form['persistent_login']['#prefix'] = '<div style="display:none;">';
+        $form['persistent_login']['#value'] = '1';
+        $form['persistent_login']['#suffix'] = '</div>';
+    }
   }
 
   // Add an after_build callback that we'll use to adjust the weight
