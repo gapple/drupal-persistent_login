@@ -126,8 +126,15 @@ function persistent_login_form_alter(&$form, $form_state, $form_id) {
     // - Visitors can create accounts and no administrator approval is required.
     // - E-mail verification is not required when a visitor creates an account.
     // - The form is not being executed by a user administrator.
-    if (!variable_get('user_email_verification', 1) && variable_get('user_register', 1) == 1 && !user_access('administer users')) {
+    if (!variable_get('user_email_verification', TRUE)
+      && variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) == USER_REGISTER_VISITORS
+      && !user_access('administer users')
+    ) {
       $alter_form = TRUE;
+    }
+
+    if (module_exists('logintoboggan') && !variable_get('logintoboggan_immediate_login_on_register', TRUE)) {
+      $alter_form = FALSE;
     }
   }
   if (!$alter_form) {
