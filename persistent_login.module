@@ -265,14 +265,17 @@ function persistent_login_user_view($account, $view_mode) {
       $account->content['security']['persistent_login'] = array(
         '#type' => 'user_profile_item',
         '#title' => t('Remembered logins'),
-        '#markup' => t('@acct %n persistent login session(s) created with the "Remember Me" login option on this site.  If you no longer trust the computer(s) on which these remembered sessions were created or think your account has been compromised for any reason, you can !erase_link.  This will not log you out of your current session but you will have to provide your username and password to log in the next time you visit this site.',
+        '#attributes' => array('class' => 'logins'),
+        '#markup' =>
+          format_plural(
+            $n,
+            '@account a persistent login session created with the "Remember Me" login option on this site.  If you no longer trust the computer on which this remembered session was created or think your account has been compromised for any reason, you can !erase_link.  This will not log you out of your current session but you will have to provide your username and password to log in the next time you visit this site.',
+            '@account @count persistent login sessions created with the "Remember Me" login option on this site.  If you no longer trust the computers on which these remembered sessions were created or think your account has been compromised for any reason, you can !erase_link.  This will not log you out of your current session but you will have to provide your username and password to log in the next time you visit this site.',
           array(
-            '@acct' => (($user->uid == $account->uid) ? t('You have') : t('User @user has', array('@user' => $account->name))),
-            '%n' => $n,
+            '@account' => (($user->uid == $account->uid) ? t('You have') : t('User @user has', array('@user' => $account->name))),
             '!erase_link' => l(t('erase persistent logins now'), 'persistent_login/erase/' . $account->uid, array(), drupal_get_destination()),
           )
         ),
-        '#attributes' => array('class' => 'logins'),
       );
     }
   }
