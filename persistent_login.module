@@ -523,35 +523,18 @@ function _persistent_login_get_cookie_name() {
  *  The path of the page to check.
  *
  * @return
- *  0 - Page should be insecure.
- *  1 - Page should be secure.
+ *  FALSE - Page should be insecure.
+ *  TRUE - Page should be secure.
  */
 function _persistent_login_match($path) {
-  $secure = variable_get('persistent_login_secure', 1);
+  $secure = (bool) variable_get('persistent_login_secure', 1);
   $pages = trim(variable_get('persistent_login_pages', PERSISTENT_LOGIN_SECURE_PATHS));
 
   if ($pages) {
-    $front = variable_get('site_frontpage', 'node');
-    $regexp = ('/^(?:' .
-      preg_replace(
-        array(
-          '/(\r\n?|\n)/',
-          '/\\\\\*/',
-          '/(^|\|)\\\\<front\\\\>($|\|)/',
-        ),
-        array(
-          '|',
-          '.*',
-          '\1' . preg_quote($front, '/') . '\2',
-        ),
-        preg_quote($pages, '/')
-      )
-      . ')$/'
-    );
-    return !($secure xor preg_match($regexp, $path));
+    return !($secure xor drupal_match_path($path, $pages));
   }
   else {
-    return 0;
+    return FALSE;
   }
 }
 
