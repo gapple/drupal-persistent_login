@@ -225,33 +225,55 @@ function persistent_login_user_logout($account) {
 }
 
 /**
+ * Implements hook_field_extra_fields().
+ */
+function persistent_login_field_extra_fields() {
+  $extra = array();
+  $extra['user']['user']['display'] = array(
+    'security' => array(
+      'label' => t('Security'),
+      'description' => t('Information on Persistent Login usage.'),
+      'weight' => 0,
+    ),
+  );
+  return $extra;
+}
+
+/**
  * Implements hook_user_view().
  */
 function persistent_login_user_view($account, $view_mode) {
   global $user;
+
   if ($user->uid == $account->uid || user_access('administer persistent login')) {
+
+    $settings = field_extra_fields_get_display('user', 'user', $view_mode);
+    if (empty($settings['security']['visible'])) {
+      return;
+    }
+
     $n = db_query('SELECT COUNT(*) FROM {persistent_login} WHERE uid = :uid AND (expires = 0 OR expires > :expires)', array(':uid' => $account->uid, ':expires' => REQUEST_TIME))->fetchField();
     if ($n > 0) {
       if (!isset($account->content['security'])) {
         $account->content['security'] = array();
       }
       $account->content['security'] += array(
-            '#type' => 'user_profile_category',
-            '#title' => t('Security'),
-            '#weight' => 10,
-          );
+        '#type' => 'user_profile_category',
+        '#title' => t('Security'),
+        '#weight' => $settings['security']['weight'],
+      );
       $account->content['security']['persistent_login'] = array(
-            '#type' => 'user_profile_item',
-            '#title' => t('Remembered logins'),
-            '#markup' => t('@acct %n persistent login session(s) created with the "Remember Me" login option on this site.  If you no longer trust the computer(s) on which these remembered sessions were created or think your account has been compromised for any reason, you can !erase_link.  This will not log you out of your current session but you will have to provide your username and password to log in the next time you visit this site.',
-              array(
-                '@acct' => (($user->uid == $account->uid) ? t('You have') : t('User @user has', array('@user' => $account->name))),
-                '%n' => $n,
-                '!erase_link' => l(t('erase persistent logins now'), 'persistent_login/erase/' . $account->uid, array(), drupal_get_destination()),
-              )
-            ),
-            '#attributes' => array('class' => 'logins'),
-          );
+        '#type' => 'user_profile_item',
+        '#title' => t('Remembered logins'),
+        '#markup' => t('@acct %n persistent login session(s) created with the "Remember Me" login option on this site.  If you no longer trust the computer(s) on which these remembered sessions were created or think your account has been compromised for any reason, you can !erase_link.  This will not log you out of your current session but you will have to provide your username and password to log in the next time you visit this site.',
+          array(
+            '@acct' => (($user->uid == $account->uid) ? t('You have') : t('User @user has', array('@user' => $account->name))),
+            '%n' => $n,
+            '!erase_link' => l(t('erase persistent logins now'), 'persistent_login/erase/' . $account->uid, array(), drupal_get_destination()),
+          )
+        ),
+        '#attributes' => array('class' => 'logins'),
+      );
     }
   }
 }
