@@ -136,6 +136,9 @@ function persistent_login_form_alter(&$form, $form_state, $form_id) {
     if (module_exists('logintoboggan') && !variable_get('logintoboggan_immediate_login_on_register', TRUE)) {
       $alter_form = FALSE;
     }
+    if (module_exists('user_registrationpassword') && variable_get('user_registrationpassword_registration', USER_REGISTRATIONPASS_VERIFICATION_PASS) != USER_REGISTRATIONPASS_NO_VERIFICATION) {
+      $alter_form = FALSE;
+    }
   }
   if (!$alter_form) {
     return;
