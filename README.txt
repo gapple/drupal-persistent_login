@@ -36,3 +36,7 @@ detailed discussion of the design and security of Persistent Login, see
 3. Visit admin >> settings >> persistent_login to set how long persistent
    sessions should last and which pages users cannot access without a
    password-based login.
+
+4. If using a reverse-proxy cache (e.g. Varnish), the configuration must be
+   updated to not respond from the cache for requests that send a persistent
+   login cookie.
