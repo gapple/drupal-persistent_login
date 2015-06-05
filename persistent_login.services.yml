@@ -1,0 +1,6 @@
+services:
+  persistent_login.token_manager:
+    class: Drupal\persistent_login\EventSubscriber\TokenManager
+    arguments: ['@database', '@session_configuration', '@entity.manager']
+    tags:
+      - { name: event_subscriber }

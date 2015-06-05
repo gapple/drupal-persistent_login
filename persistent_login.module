@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ * Contains persistent_login.module.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function persistent_login_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $alter_form = FALSE;
+  if (substr($form_id, 0, 10) == 'user_login') {
+    $alter_form = TRUE;
+  }
+//  elseif (substr($form_id, 0, 13) == 'user_register') {
+//    $alter_form = TRUE;
+//  }
+
+  if (!$alter_form) {
+    return;
+  }
+
+  $form['persistent_login'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Remember me'),
+  );
+  $form['#submit'][] = 'persistent_login_user_login_form_submit';
+}
+
+/**
+ * Submit handler for login forms to set persistent login properties.
+ */
+function persistent_login_user_login_form_submit(&$form, FormStateInterface $form_state) {
+
+  if ($form_state->getValue('persistent_login', FALSE)) {
+    \Drupal::service('persistent_login.token_manager')->setNewToken(\Drupal::service('current_user')->id());
+  }
+}
+
+/**
+ * Implements hook_user_logout().
+ */
+function persistent_login_user_logout($account) {
+  \Drupal::service('persistent_login.token_manager')->clearToken();
+}
