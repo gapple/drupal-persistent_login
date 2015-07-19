@@ -7,6 +7,7 @@
 
 namespace Drupal\persistent_login\EventSubscriber;
 
+use DateTime;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Session\SessionConfigurationInterface;
@@ -109,10 +110,12 @@ class TokenManager implements EventSubscriberInterface {
 
       if ($this->token->getStatus() === PersistentToken::STATUS_VALID) {
         // New or updated token.
+        $this->token = $this->updateToken($this->token);
         $response->headers->setCookie(
           new Cookie(
             $this->getCookieName($request),
-            $this->updateToken($this->token)
+            $this->token,
+            $this->token->getExpiry()
           )
         );
       }
@@ -165,14 +168,16 @@ class TokenManager implements EventSubscriberInterface {
   public function validateToken(PersistentToken $token) {
 
     $selectResult = $this->connection->select('persistent_login', 'pl')
-      ->fields('pl', array('uid'))
+      ->fields('pl', array('uid', 'expires'))
       ->condition('expires', REQUEST_TIME, '>')
       ->condition('series', $token->getSeries())
       ->condition('instance', $token->getInstance())
       ->execute();
 
     if ($tokenData = $selectResult->fetchObject()) {
-      return $token->setUid($tokenData->uid);
+      return $token
+        ->setUid($tokenData->uid)
+        ->setExpiry(new DateTime('@' . $tokenData->expires));
     }
     else {
       return $token->setInvalid();
@@ -186,7 +191,8 @@ class TokenManager implements EventSubscriberInterface {
    */
   public function setNewSessionToken($uid) {
 
-    $token = PersistentToken::createNew($uid);
+    $token = PersistentToken::createNew($uid)
+      ->setExpiry(new DateTime("now +30 day"));
 
     try {
       $this->connection->insert('persistent_login')
@@ -194,7 +200,7 @@ class TokenManager implements EventSubscriberInterface {
           'uid' => $uid,
           'series' => $token->getSeries(),
           'instance' => $token->getInstance(),
-          'expires' => strtotime('now +30 day'),
+          'expires' => $token->getExpiry()->getTimestamp(),
         ))
         ->execute();
 

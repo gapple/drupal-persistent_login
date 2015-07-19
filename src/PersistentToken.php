@@ -33,6 +33,11 @@ class PersistentToken {
   protected $uid;
 
   /**
+   * @var \DateTimeInterface
+   */
+  protected $expires;
+
+  /**
    * @param string $series
    * @param string $instance
    * @param int $uid
@@ -144,6 +149,27 @@ class PersistentToken {
    */
   public function getInstance() {
     return $this->instance;
+  }
+
+  /**
+   * Get the expiry time for this token.
+   *
+   * @return \DateTimeInterface
+   */
+  public function getExpiry() {
+    return $this->expires;
+  }
+
+  /**
+   * Set the expiry time for this token.
+   *
+   * @param \DateTimeInterface
+   * @return $this
+   */
+  public function setExpiry(\DateTimeInterface $date) {
+    $this->expires = $date;
+
+    return $this;
   }
 
   /**
