@@ -8,17 +8,29 @@ function persistent_login_schema() {
   $schema['persistent_login'] = array(
     'description' => 'Stores Persistent Login tokens for users',
     'fields' => array(
-      'uid' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1,
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
         'description' => 'The {users}.uid this row is for.',
       ),
-      'series' => array('type' => 'varchar', 'length' => 43, 'not null' => 1,
+      'series' => array(
+        'type' => 'varchar',
+        'length' => 43,
+        'not null' => TRUE,
         'description' => 'The long-lived value identifying the token sequence.',
       ),
-      'instance' => array('type' => 'varchar', 'length' => 43, 'not null' => 1,
+      'instance' => array(
+        'type' => 'varchar',
+        'length' => 43,
+        'not null' => TRUE,
         'description' => 'The single-use value.',
       ),
-      'expires' => array('type' => 'int', 'unsigned' => 1, 'not null' => 1,
-        'description' => 'The expiration date for this series of tokens.',
+      'expires' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'The expiration timestamp for this series of tokens.',
       ),
     ),
     'primary key' => array('series'),
