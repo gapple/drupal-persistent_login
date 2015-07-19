@@ -46,3 +46,10 @@ function persistent_login_user_login_form_submit(&$form, FormStateInterface $for
 function persistent_login_user_logout($account) {
   \Drupal::service('persistent_login.token_manager')->clearSessionToken();
 }
+
+/**
+ * Implements hook_cron().
+ */
+function persistent_login_cron() {
+  \Drupal::service('persistent_login.token_manager')->cleanupExpiredTokens();
+}

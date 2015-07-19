@@ -268,4 +268,19 @@ class TokenManager implements EventSubscriberInterface {
     }
     return $token->setInvalid();
   }
+
+  /**
+   * Remove expired tokens from the database.
+   */
+  public function cleanupExpiredTokens() {
+    try {
+      $this->connection->delete('persistent_login')
+        ->condition('expires', time(), '<')
+        ->condition('expires', 0, '>')
+        ->execute();
+    }
+    catch (\Exception $e) {
+
+    }
+  }
 }
