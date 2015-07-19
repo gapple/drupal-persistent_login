@@ -62,6 +62,8 @@ class TokenManager implements EventSubscriberInterface {
   }
 
   /**
+   * Load a token on this request, if a persistent cookie is provided.
+   *
    * @param \Symfony\Component\HttpKernel\Event\GetResponseEvent $event
    */
   public function loadTokenOnRequestEvent(GetResponseEvent $event) {
@@ -73,18 +75,26 @@ class TokenManager implements EventSubscriberInterface {
     $request = $event->getRequest();
 
     if ($this->hasCookie($request)) {
-
       $this->token = $this->getTokenFromCookie($request);
 
-      if (!$this->sessionConfiguration->hasSession($request) && $this->validateToken($this->token)) {
-        // TODO make sure we start the user session properly
-        $user = $this->entityManager->getStorage('user')->load($this->token->getUid());
-        user_login_finalize($user);
+      // Only validate the token if a user session has not been started.
+      if (!$this->sessionConfiguration->hasSession($request)) {
+        $this->token = $this->validateToken($this->token);
+
+        if ($this->token->getStatus() === PersistentToken::STATUS_VALID) {
+          // TODO make sure we are starting the user session properly.
+          /** @var \Drupal\User\UserInterface $user */
+          $user = $this->entityManager->getStorage('user')
+            ->load($this->token->getUid());
+          user_login_finalize($user);
+        }
       }
     }
   }
 
   /**
+   * Set or clear a token cookie on this response, if required.
+   *
    * @param \Symfony\Component\HttpKernel\Event\FilterResponseEvent $event
    */
   public function setTokenOnResponseEvent (FilterResponseEvent $event) {
@@ -97,11 +107,17 @@ class TokenManager implements EventSubscriberInterface {
       $request = $event->getRequest();
       $response = $event->getResponse();
 
-      if ($this->token->getUid()) {
-        $this->updateToken($this->token);
-        $response->headers->setCookie(new Cookie($this->getCookieName($request), $this->token));
+      if ($this->token->getStatus() === PersistentToken::STATUS_VALID) {
+        // New or updated token.
+        $response->headers->setCookie(
+          new Cookie(
+            $this->getCookieName($request),
+            $this->updateToken($this->token)
+          )
+        );
       }
-      else if ($this->token->getUid() == PersistentToken::INVALID){
+      else if ($this->token->getStatus() === PersistentToken::STATUS_INVALID){
+        // Invalid token, or manually cleared token (e.g. user logged out).
         $this->deleteToken($this->token);
         $response->headers->clearCookie($this->getCookieName($request));
       }
@@ -144,9 +160,7 @@ class TokenManager implements EventSubscriberInterface {
    * successful.
    *
    * @param \Drupal\persistent_login\PersistentToken $token
-   *
-   * @return bool
-   *   If a valid entry for the provided token is stored in the database.
+   * @return \Drupal\persistent_login\PersistentToken
    */
   public function validateToken(PersistentToken $token) {
 
@@ -158,21 +172,19 @@ class TokenManager implements EventSubscriberInterface {
       ->execute();
 
     if ($tokenData = $selectResult->fetchObject()) {
-      $token->setUid($tokenData->uid);
-      return TRUE;
+      return $token->setUid($tokenData->uid);
     }
     else {
-      $token->setUid(PersistentToken::INVALID);
-      return FALSE;
+      return $token->setInvalid();
     }
   }
 
   /**
    * Create and store a new token for the specified user.
    *
-   * @param $uid
+   * @param int $uid
    */
-  public function setNewToken($uid) {
+  public function setNewSessionToken($uid) {
 
     $token = PersistentToken::createNew($uid);
 
@@ -199,12 +211,13 @@ class TokenManager implements EventSubscriberInterface {
    * new value to the database.
    *
    * @param \Drupal\persistent_login\PersistentToken $token
+   * @return \Drupal\persistent_login\PersistentToken
+   *  The updated token object
    */
   public function updateToken(PersistentToken $token) {
 
     $originalInstance = $token->getInstance();
-
-    $token->updateInstance();
+    $token = $token->updateInstance();
 
     try {
       $this->connection->update('persistent_login')
@@ -214,8 +227,9 @@ class TokenManager implements EventSubscriberInterface {
         ->execute();
     }
     catch (\Exception $e) {
-
+      // If update fails, new token will just fail to validate when used.
     }
+    return $token;
   }
 
   /**
@@ -224,9 +238,9 @@ class TokenManager implements EventSubscriberInterface {
    * This will cause the token to be removed from the database at the end of the
    * request.
    */
-  public function clearToken() {
+  public function clearSessionToken() {
     if ($this->token) {
-      $this->token->setUid(PersistentToken::INVALID);
+      $this->token = $this->token->setInvalid();
     }
   }
 
@@ -234,6 +248,7 @@ class TokenManager implements EventSubscriberInterface {
    * Delete the specified token from the database, if it exists.
    *
    * @param \Drupal\persistent_login\PersistentToken
+   * @return \Drupal\persistent_login\PersistentToken
    */
   public function deleteToken(PersistentToken $token) {
     try {
@@ -241,11 +256,10 @@ class TokenManager implements EventSubscriberInterface {
         ->condition('series', $token->getSeries())
         ->condition('instance', $token->getInstance())
         ->execute();
-
-      $token->setUid(PersistentToken::INVALID);
     }
     catch (\Exception $e) {
 
     }
+    return $token->setInvalid();
   }
 }

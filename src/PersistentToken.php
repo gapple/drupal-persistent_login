@@ -11,8 +11,9 @@ use Drupal\Component\Utility\Crypt;
 
 class PersistentToken {
 
-  const NOT_VALIDATED = 0;
-  const INVALID = -1;
+  const STATUS_NOT_VALIDATED = 0;
+  const STATUS_VALID = 1;
+  const STATUS_INVALID = -1;
 
   /**
    * Long-lived identifier.
@@ -31,6 +32,11 @@ class PersistentToken {
    */
   protected $uid;
 
+  /**
+   * @param string $series
+   * @param string $instance
+   * @param int $uid
+   */
   public function __construct($series, $instance, $uid = 0) {
     $this->series = $series;
     $this->instance = $instance;
@@ -87,9 +93,39 @@ class PersistentToken {
    * This marks the token as valid.
    *
    * @param $uid
+   * @return $this
    */
   public function setUid($uid) {
     $this->uid = $uid;
+
+    return $this;
+  }
+
+  /**
+   * @return int
+   *  A status constant.
+   */
+  public function getStatus() {
+    if ($this->uid === 0) {
+      return self::STATUS_NOT_VALIDATED;
+    }
+    elseif ($this->uid > 0) {
+      return self::STATUS_VALID;
+    }
+    else {
+      return self::STATUS_INVALID;
+    }
+  }
+
+  /**
+   * Mark this token as invalid.
+   *
+   * @return $this
+   */
+  public function setInvalid() {
+    $this->uid = self::STATUS_INVALID;
+
+    return $this;
   }
 
   /**
@@ -112,8 +148,12 @@ class PersistentToken {
 
   /**
    * Update the instance identifier with a new random value.
+   *
+   * @return $this
    */
   public function updateInstance() {
     $this->instance = \Drupal::csrfToken()->get(Crypt::randomBytesBase64());
+
+    return $this;
   }
 }
