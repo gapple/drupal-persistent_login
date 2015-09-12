@@ -7,8 +7,6 @@
 
 namespace Drupal\persistent_login;
 
-use Drupal\Component\Utility\Crypt;
-
 class PersistentToken {
 
   const STATUS_NOT_VALIDATED = 0;
@@ -42,26 +40,10 @@ class PersistentToken {
    * @param string $instance
    * @param int $uid
    */
-  public function __construct($series, $instance, $uid = 0) {
+  public function __construct($series, $instance, $uid = self::STATUS_NOT_VALIDATED) {
     $this->series = $series;
     $this->instance = $instance;
     $this->uid = $uid;
-  }
-
-  /**
-   * Create a new token.
-   *
-   * @param int $uid
-   *
-   * @return static
-   *   A token for the provided uid, with random series and instance identifiers.
-   */
-  public static function createNew($uid = 0) {
-    return new static(
-      \Drupal::csrfToken()->get(Crypt::randomBytesBase64()),
-      \Drupal::csrfToken()->get(Crypt::randomBytesBase64()),
-      $uid
-    );
   }
 
   /**
@@ -71,8 +53,8 @@ class PersistentToken {
    * @return static
    */
   public static function createFromString($value) {
-    $values = explode(':', $value);
-    return new static($values[0], $values[1]);
+    list($series, $token) = explode(':', $value);
+    return new static($series, $token);
   }
 
   /**
@@ -97,7 +79,7 @@ class PersistentToken {
    * Set the uid for this token.
    * This marks the token as valid.
    *
-   * @param $uid
+   * @param int $uid
    * @return $this
    */
   public function setUid($uid) {
@@ -152,6 +134,18 @@ class PersistentToken {
   }
 
   /**
+   * Update the instance identifier with a new random value.
+   *
+   * @param string $instance
+   * @return $this
+   */
+  public function updateInstance($instance) {
+    $this->instance = $instance;
+
+    return $this;
+  }
+
+  /**
    * Get the expiry time for this token.
    *
    * @return \DateTimeInterface
@@ -168,17 +162,6 @@ class PersistentToken {
    */
   public function setExpiry(\DateTimeInterface $date) {
     $this->expires = $date;
-
-    return $this;
-  }
-
-  /**
-   * Update the instance identifier with a new random value.
-   *
-   * @return $this
-   */
-  public function updateInstance() {
-    $this->instance = \Drupal::csrfToken()->get(Crypt::randomBytesBase64());
 
     return $this;
   }

@@ -8,6 +8,8 @@
 namespace Drupal\persistent_login\EventSubscriber;
 
 use DateTime;
+use Drupal\Component\Utility\Crypt;
+use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Session\SessionConfigurationInterface;
@@ -32,6 +34,11 @@ class TokenManager implements EventSubscriberInterface {
   protected $connection;
 
   /**
+   * @var \Drupal\Core\Access\CsrfTokenGenerator
+   */
+  protected $csrfToken;
+
+  /**
    * @var \Drupal\Core\Session\SessionConfigurationInterface
    */
   protected $sessionConfiguration;
@@ -46,8 +53,9 @@ class TokenManager implements EventSubscriberInterface {
    */
   protected $token;
 
-  public function __construct(Connection $connection, SessionConfigurationInterface $sessionConfiguration, EntityManagerInterface $entityManager) {
+  public function __construct(Connection $connection, CsrfTokenGenerator $csrfToken, SessionConfigurationInterface $sessionConfiguration, EntityManagerInterface $entityManager) {
     $this->connection = $connection;
+    $this->csrfToken = $csrfToken;
     $this->sessionConfiguration = $sessionConfiguration;
     $this->entityManager = $entityManager;
   }
@@ -191,7 +199,11 @@ class TokenManager implements EventSubscriberInterface {
    */
   public function setNewSessionToken($uid) {
 
-    $token = PersistentToken::createNew($uid)
+    $token = (new PersistentToken(
+        $this->csrfToken->get(Crypt::randomBytesBase64()),
+        $this->csrfToken->get(Crypt::randomBytesBase64()),
+        $uid
+      ))
       ->setExpiry(new DateTime("now +30 day"));
 
     try {
@@ -223,7 +235,7 @@ class TokenManager implements EventSubscriberInterface {
   public function updateToken(PersistentToken $token) {
 
     $originalInstance = $token->getInstance();
-    $token = $token->updateInstance();
+    $token = $token->updateInstance($this->csrfToken->get(Crypt::randomBytesBase64()));
 
     try {
       $this->connection->update('persistent_login')
