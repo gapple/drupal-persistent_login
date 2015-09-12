@@ -132,6 +132,9 @@ class TokenManager implements EventSubscriberInterface {
         $this->deleteToken($this->token);
         $response->headers->clearCookie($this->getCookieName($request));
       }
+      else {
+        // Ignore token if status is STATUS_NOT_VALIDATED
+      }
     }
   }
 
