@@ -290,7 +290,7 @@ class TokenManager implements EventSubscriberInterface {
   public function cleanupExpiredTokens() {
     try {
       $this->connection->delete('persistent_login')
-        ->condition('expires', time(), '<')
+        ->condition('expires', REQUEST_TIME, '<')
         ->condition('expires', 0, '>')
         ->execute();
     }
