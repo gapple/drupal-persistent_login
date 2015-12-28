@@ -41,3 +41,24 @@ function persistent_login_schema() {
   );
   return $schema;
 }
+
+/**
+ * Implements hook_requirements().
+ */
+function persistent_login_requirements($phase) {
+  $requirements = [];
+
+  if ($phase == 'runtime') {
+    $session_storage_options = \Drupal::getContainer()->getParameter('session.storage.options');
+    if ($session_storage_options['cookie_lifetime'] > 0) {
+      $requirements['persistent_login'] = [
+        'title' => t('Session cookie lifetime'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => t('When using Persistent Login, session cookie lifetime should be 0 so that sessions end when the browser is closed.  You can change this setting by editing <strong>services.yml</strong> and rebuilding the cache.'),
+        'value' => $session_storage_options['cookie_lifetime'],
+      ];
+    }
+  }
+
+  return $requirements;
+}
