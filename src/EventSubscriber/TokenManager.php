@@ -61,7 +61,7 @@ class TokenManager implements EventSubscriberInterface {
   }
 
   public static function getSubscribedEvents() {
-    $events = array();
+    $events = [];
 
     // Must occur before AuthenticationSubscriber.
     $events[KernelEvents::REQUEST][] = ['loadTokenOnRequestEvent', 310];
@@ -179,7 +179,7 @@ class TokenManager implements EventSubscriberInterface {
   public function validateToken(PersistentToken $token) {
 
     $selectResult = $this->connection->select('persistent_login', 'pl')
-      ->fields('pl', array('uid', 'expires'))
+      ->fields('pl', ['uid', 'expires'])
       ->condition('expires', REQUEST_TIME, '>')
       ->condition('series', $token->getSeries())
       ->condition('instance', $token->getInstance())
@@ -211,12 +211,12 @@ class TokenManager implements EventSubscriberInterface {
 
     try {
       $this->connection->insert('persistent_login')
-        ->fields(array(
+        ->fields([
           'uid' => $uid,
           'series' => $token->getSeries(),
           'instance' => $token->getInstance(),
           'expires' => $token->getExpiry()->getTimestamp(),
-        ))
+        ])
         ->execute();
 
       $this->token = $token;
@@ -242,7 +242,7 @@ class TokenManager implements EventSubscriberInterface {
 
     try {
       $this->connection->update('persistent_login')
-        ->fields(array('instance' => $token->getInstance()))
+        ->fields(['instance' => $token->getInstance()])
         ->condition('series', $token->getSeries())
         ->condition('instance', $originalInstance)
         ->execute();

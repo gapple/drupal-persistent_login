@@ -23,10 +23,10 @@ function persistent_login_form_alter(&$form, FormStateInterface $form_state, $fo
     return;
   }
 
-  $form['persistent_login'] = array(
+  $form['persistent_login'] = [
     '#type' => 'checkbox',
     '#title' => t('Remember me'),
-  );
+  ];
   $form['#submit'][] = 'persistent_login_user_login_form_submit';
 }
 

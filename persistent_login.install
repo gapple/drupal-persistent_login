@@ -4,41 +4,41 @@
  * Implements hook_schema().
  */
 function persistent_login_schema() {
-  $schema = array();
-  $schema['persistent_login'] = array(
+  $schema = [];
+  $schema['persistent_login'] = [
     'description' => 'Stores Persistent Login tokens for users',
-    'fields' => array(
-      'uid' => array(
+    'fields' => [
+      'uid' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'description' => 'The {users}.uid this row is for.',
-      ),
-      'series' => array(
+      ],
+      'series' => [
         'type' => 'varchar',
         'length' => 43,
         'not null' => TRUE,
         'description' => 'The long-lived value identifying the token sequence.',
-      ),
-      'instance' => array(
+      ],
+      'instance' => [
         'type' => 'varchar',
         'length' => 43,
         'not null' => TRUE,
         'description' => 'The single-use value.',
-      ),
-      'expires' => array(
+      ],
+      'expires' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'description' => 'The expiration timestamp for this series of tokens.',
-      ),
-    ),
-    'primary key' => array('series'),
-    'indexes' => array(
-      'expires' => array('expires'),
-      'uid_expires' => array('uid', 'expires'),
-    ),
-  );
+      ],
+    ],
+    'primary key' => ['series'],
+    'indexes' => [
+      'expires' => ['expires'],
+      'uid_expires' => ['uid', 'expires'],
+    ],
+  ];
   return $schema;
 }
 
