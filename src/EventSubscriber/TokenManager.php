@@ -11,7 +11,7 @@ use DateTime;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\SessionConfigurationInterface;
 use Drupal\persistent_login\PersistentToken;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -53,7 +53,12 @@ class TokenManager implements EventSubscriberInterface {
    */
   protected $token;
 
-  public function __construct(Connection $connection, CsrfTokenGenerator $csrfToken, SessionConfigurationInterface $sessionConfiguration, EntityManagerInterface $entityManager) {
+  public function __construct(
+    Connection $connection,
+    CsrfTokenGenerator $csrfToken,
+    SessionConfigurationInterface $sessionConfiguration,
+    EntityTypeManagerInterface $entityManager
+  ) {
     $this->connection = $connection;
     $this->csrfToken = $csrfToken;
     $this->sessionConfiguration = $sessionConfiguration;
