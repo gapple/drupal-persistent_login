@@ -1,0 +1,8 @@
+persistent_login.settings:
+  path: '/admin/config/system/persistent_login'
+  defaults:
+    _form: '\Drupal\persistent_login\Form\PersistentLoginSettingsForm'
+    _title: 'Persistent Login'
+  requirements:
+    _permission: 'administer site configuration'
+

@@ -1,0 +1,6 @@
+persistent_login.settings:
+  title: 'Persistent Login'
+  parent: system.admin_config_system
+  description: 'Change lifetime and token limit'
+  route_name: persistent_login.settings
+  weight: 0
