@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains Drupal\persistent_login\TokenManager
+ * Contains Drupal\persistent_login\TokenManager.
  */
 
 namespace Drupal\persistent_login\EventSubscriber;
@@ -29,30 +29,52 @@ use Symfony\Component\HttpKernel\KernelEvents;
 class TokenManager implements EventSubscriberInterface {
 
   /**
+   * The database connection.
+   *
    * @var \Drupal\Core\Database\Connection
    */
   protected $connection;
 
   /**
+   * The token generator.
+   *
    * @var \Drupal\Core\Access\CsrfTokenGenerator
    */
   protected $csrfToken;
 
   /**
+   * The session configuration object.
+   *
    * @var \Drupal\Core\Session\SessionConfigurationInterface
    */
   protected $sessionConfiguration;
 
   /**
+   * The entity manager.
+   *
    * @var \Drupal\Core\Entity\EntityManagerInterface
    */
   protected $entityManager;
 
   /**
+   * The persistent token of the current request.
+   *
    * @var PersistentToken
    */
   protected $token;
 
+  /**
+   * Construct a token manager object.
+   *
+   * @param \Drupal\Core\Database\Connection $connection
+   *   The database connection.
+   * @param \Drupal\Core\Access\CsrfTokenGenerator $csrfToken
+   *   The token generator.
+   * @param \Drupal\Core\Session\SessionConfigurationInterface $sessionConfiguration
+   *   The session configuration.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityManager
+   *   The enitity manager.
+   */
   public function __construct(
     Connection $connection,
     CsrfTokenGenerator $csrfToken,
@@ -65,6 +87,12 @@ class TokenManager implements EventSubscriberInterface {
     $this->entityManager = $entityManager;
   }
 
+  /**
+   * Specify subscribed events.
+   *
+   * @return array
+   *   The subscribed events.
+   */
   public static function getSubscribedEvents() {
     $events = [];
 
@@ -79,6 +107,7 @@ class TokenManager implements EventSubscriberInterface {
    * Load a token on this request, if a persistent cookie is provided.
    *
    * @param \Symfony\Component\HttpKernel\Event\GetResponseEvent $event
+   *   The request event.
    */
   public function loadTokenOnRequestEvent(GetResponseEvent $event) {
 
@@ -110,8 +139,9 @@ class TokenManager implements EventSubscriberInterface {
    * Set or clear a token cookie on this response, if required.
    *
    * @param \Symfony\Component\HttpKernel\Event\FilterResponseEvent $event
+   *   The response event.
    */
-  public function setTokenOnResponseEvent (FilterResponseEvent $event) {
+  public function setTokenOnResponseEvent(FilterResponseEvent $event) {
 
     if (!$event->isMasterRequest()) {
       return;
@@ -132,22 +162,27 @@ class TokenManager implements EventSubscriberInterface {
           )
         );
       }
-      else if ($this->token->getStatus() === PersistentToken::STATUS_INVALID){
+      elseif ($this->token->getStatus() === PersistentToken::STATUS_INVALID) {
         // Invalid token, or manually cleared token (e.g. user logged out).
         $this->deleteToken($this->token);
         $response->headers->clearCookie($this->getCookieName($request));
       }
       else {
-        // Ignore token if status is STATUS_NOT_VALIDATED
+        // Ignore token if status is STATUS_NOT_VALIDATED.
       }
     }
   }
 
   /**
-   * Get the name of the persistent login cookie, based on the session cookie name.
+   * Get the name of the persistent login cookie.
+   *
+   * Value is based on the session cookie name.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
+   *
    * @return string
+   *   The cookie name.
    */
   protected function getCookieName(Request $request) {
     $sessionConfigurationSettings = $this->sessionConfiguration->getOptions($request);
@@ -158,7 +193,10 @@ class TokenManager implements EventSubscriberInterface {
    * Check if a request contains a persistent login cookie.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
+   *
    * @return bool
+   *   True if the request provides a persistent login cookie.
    */
   public function hasCookie(Request $request) {
     return $request->cookies->has($this->getCookieName($request));
@@ -168,18 +206,26 @@ class TokenManager implements EventSubscriberInterface {
    * Create a token object from the cookie provided in the request.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
+   *   A request that contains a persistent login cookie.
+   *
    * @return \Drupal\persistent_login\PersistentToken
+   *   A new PersistentToken object.
    */
   public function getTokenFromCookie(Request $request) {
     return PersistentToken::createFromString($request->cookies->get($this->getCookieName($request)));
   }
 
   /**
-   * Check the database for the provided token, and update the token uid if
-   * successful.
+   * Check the database for the provided token.
+   *
+   * If valid, a new token is returned with the uid set to the associated user,
+   * otherwise a new invalid token is returned.
    *
    * @param \Drupal\persistent_login\PersistentToken $token
+   *   The token to validate.
+   *
    * @return \Drupal\persistent_login\PersistentToken
+   *   A validated token.
    */
   public function validateToken(PersistentToken $token) {
 
@@ -190,7 +236,7 @@ class TokenManager implements EventSubscriberInterface {
       ->condition('instance', $token->getInstance())
       ->execute();
 
-    if ($tokenData = $selectResult->fetchObject()) {
+    if (($tokenData = $selectResult->fetchObject())) {
       return $token
         ->setUid($tokenData->uid)
         ->setExpiry(new DateTime('@' . $tokenData->expires));
@@ -204,6 +250,7 @@ class TokenManager implements EventSubscriberInterface {
    * Create and store a new token for the specified user.
    *
    * @param int $uid
+   *   The user id to associate the token to.
    */
   public function setNewSessionToken($uid) {
 
@@ -226,19 +273,22 @@ class TokenManager implements EventSubscriberInterface {
 
       $this->token = $token;
     }
-    catch(\Exception $e) {
-      // TODO handle new token failure
+    catch (\Exception $e) {
+      // TODO handle new token failure.
       return;
     }
   }
 
   /**
-   * Update the provided token object's instance identifier, and propagate the
-   * new value to the database.
+   * Update the provided token's instance identifier.
+   *
+   * The new instance value is also propagated the to the database.
    *
    * @param \Drupal\persistent_login\PersistentToken $token
+   *   The token.
+   *
    * @return \Drupal\persistent_login\PersistentToken
-   *  The updated token object
+   *   An updated token.
    */
   public function updateToken(PersistentToken $token) {
 
@@ -273,8 +323,11 @@ class TokenManager implements EventSubscriberInterface {
   /**
    * Delete the specified token from the database, if it exists.
    *
-   * @param \Drupal\persistent_login\PersistentToken
+   * @param \Drupal\persistent_login\PersistentToken $token
+   *   The token.
+   *
    * @return \Drupal\persistent_login\PersistentToken
+   *   An invalidated token.
    */
   public function deleteToken(PersistentToken $token) {
     try {
@@ -303,4 +356,5 @@ class TokenManager implements EventSubscriberInterface {
 
     }
   }
+
 }

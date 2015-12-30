@@ -2,11 +2,16 @@
 
 /**
  * @file
- * Contains Drupal\persistent_login\PersistentToken
+ * Contains Drupal\persistent_login\PersistentToken.
  */
 
 namespace Drupal\persistent_login;
 
+/**
+ * Class PersistentToken.
+ *
+ * @package Drupal\persistent_login
+ */
 class PersistentToken {
 
   const STATUS_NOT_VALIDATED = 0;
@@ -15,30 +20,43 @@ class PersistentToken {
 
   /**
    * Long-lived identifier.
+   *
    * @var string
    */
   protected $series;
 
   /**
    * Single-use identifier.
+   *
    * @var string
    */
   protected $instance;
 
   /**
+   * User id.
+   *
    * @var int
    */
   protected $uid;
 
   /**
+   * Expiration time.
+   *
    * @var \DateTimeInterface
    */
   protected $expires;
 
   /**
+   * Construct a persistent token.
+   *
+   * If a user id is not provided, the token is marked as not-validated.
+   *
    * @param string $series
+   *   The long-lived identifier.
    * @param string $instance
+   *   The single-use identifier.
    * @param int $uid
+   *   The user id (optional).
    */
   public function __construct($series, $instance, $uid = self::STATUS_NOT_VALIDATED) {
     $this->series = $series;
@@ -50,7 +68,10 @@ class PersistentToken {
    * Initialize a new object from a cookie value string.
    *
    * @param string $value
+   *   The cookie value.
+   *
    * @return static
+   *   A new token.
    */
   public static function createFromString($value) {
     list($series, $token) = explode(':', $value);
@@ -61,6 +82,7 @@ class PersistentToken {
    * Return a string suitable for use as a cookie value.
    *
    * @return string
+   *   The cookie value.
    */
   public function __toString() {
     return $this->series . ':' . $this->instance;
@@ -70,6 +92,7 @@ class PersistentToken {
    * Get the uid of this token.
    *
    * @return int
+   *   The user id.
    */
   public function getUid() {
     return $this->uid;
@@ -77,9 +100,12 @@ class PersistentToken {
 
   /**
    * Set the uid for this token.
+   *
    * This marks the token as valid.
    *
    * @param int $uid
+   *   The user id.
+   *
    * @return $this
    */
   public function setUid($uid) {
@@ -89,8 +115,10 @@ class PersistentToken {
   }
 
   /**
+   * The token validation status.
+   *
    * @return int
-   *  A status constant.
+   *   A validation status constant.
    */
   public function getStatus() {
     if ($this->uid === 0) {
@@ -119,6 +147,7 @@ class PersistentToken {
    * Get the series identifier of this token.
    *
    * @return string
+   *   The series identifier.
    */
   public function getSeries() {
     return $this->series;
@@ -128,15 +157,18 @@ class PersistentToken {
    * Get the instance identifier of this token.
    *
    * @return string
+   *   The instance identifier.
    */
   public function getInstance() {
     return $this->instance;
   }
 
   /**
-   * Update the instance identifier with a new random value.
+   * Update the instance identifier.
    *
    * @param string $instance
+   *   The new instance identifier.
+   *
    * @return $this
    */
   public function updateInstance($instance) {
@@ -149,6 +181,7 @@ class PersistentToken {
    * Get the expiry time for this token.
    *
    * @return \DateTimeInterface
+   *   The expiry time.
    */
   public function getExpiry() {
     return $this->expires;
@@ -157,7 +190,9 @@ class PersistentToken {
   /**
    * Set the expiry time for this token.
    *
-   * @param \DateTimeInterface
+   * @param \DateTimeInterface $date
+   *   The expiry time.
+   *
    * @return $this
    */
   public function setExpiry(\DateTimeInterface $date) {
@@ -165,4 +200,5 @@ class PersistentToken {
 
     return $this;
   }
+
 }
