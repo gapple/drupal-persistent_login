@@ -58,8 +58,8 @@ class PersistentLoginSettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
     $this->config('persistent_login.settings')
-      ->set('lifetime', $form_state->getValue('lifetime'))
-      ->set('max_tokens', $form_state->getValue('max_tokens'))
+      ->set('lifetime', (int) $form_state->getValue('lifetime'))
+      ->set('max_tokens', (int) $form_state->getValue('max_tokens'))
       ->save();
 
     parent::submitForm($form, $form_state);

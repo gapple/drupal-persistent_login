@@ -1,6 +1,6 @@
 services:
   persistent_login.token_manager:
     class: Drupal\persistent_login\EventSubscriber\TokenManager
-    arguments: ['@database', '@csrf_token', '@session_configuration', '@entity.manager']
+    arguments: ['@database', '@config.factory', '@csrf_token', '@session_configuration', '@entity.manager']
     tags:
       - { name: event_subscriber }
