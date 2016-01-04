@@ -298,6 +298,30 @@ class TokenManager implements EventSubscriberInterface {
       // TODO handle new token failure.
       return;
     }
+
+    // Check for exceeding the maximum tokens per user.
+    if ($config->get('max_tokens') !== 0) {
+      try {
+        $oldTokensResult = $this->connection->select('persistent_login', 'pl')
+          ->fields('pl', ['created', 'expires'])
+          ->orderBy('expires', 'DESC')
+          ->orderBy('created', 'DESC')
+          ->condition('uid', $uid)
+          ->range($config->get('max_tokens'), 1)
+          ->execute();
+        if (($oldestToken = $oldTokensResult->fetchObject())) {
+          $this->connection->delete('persistent_login')
+            ->condition('uid', $uid)
+            ->condition('expires', $oldestToken->expires, '<=')
+            ->condition('created', $oldestToken->created, '<=')
+            ->execute();
+        }
+      }
+      catch (\Exception $e) {
+
+      }
+    }
+
   }
 
   /**
