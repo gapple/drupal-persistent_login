@@ -39,6 +39,14 @@ class PersistentToken {
    */
   protected $uid;
 
+
+  /**
+   * Creation time.
+   *
+   * @var \DateTimeInterface
+   */
+  protected $created;
+
   /**
    * Expiration time.
    *
@@ -62,6 +70,10 @@ class PersistentToken {
     $this->series = $series;
     $this->instance = $instance;
     $this->uid = $uid;
+
+    // Set the default creation date.
+    // Existing tokens can update the value afterwards with setCreated().
+    $this->created = new \DateTime();
   }
 
   /**
@@ -173,6 +185,30 @@ class PersistentToken {
    */
   public function updateInstance($instance) {
     $this->instance = $instance;
+
+    return $this;
+  }
+
+  /**
+   * Get the creation time of this token.
+   *
+   * @return \DateTimeInterface
+   *   The creation time.
+   */
+  public function getCreated() {
+    return $this->created;
+  }
+
+  /**
+   * Set the creation time of this token.
+   *
+   * @param \DateTimeInterface $date
+   *   The creation time.
+   *
+   * @return $this
+   */
+  public function setCreated(\DateTimeInterface $date) {
+    $this->created = $date;
 
     return $this;
   }

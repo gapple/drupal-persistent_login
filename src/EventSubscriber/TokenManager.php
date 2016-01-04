@@ -242,7 +242,7 @@ class TokenManager implements EventSubscriberInterface {
   public function validateToken(PersistentToken $token) {
 
     $selectResult = $this->connection->select('persistent_login', 'pl')
-      ->fields('pl', ['uid', 'expires'])
+      ->fields('pl', ['uid', 'created', 'expires'])
       ->condition('expires', REQUEST_TIME, '>')
       ->condition('series', $token->getSeries())
       ->condition('instance', $token->getInstance())
@@ -251,6 +251,7 @@ class TokenManager implements EventSubscriberInterface {
     if (($tokenData = $selectResult->fetchObject())) {
       return $token
         ->setUid($tokenData->uid)
+        ->setCreated(new DateTime(('@' . $tokenData->created)))
         ->setExpiry(new DateTime('@' . $tokenData->expires));
     }
     else {
@@ -286,6 +287,7 @@ class TokenManager implements EventSubscriberInterface {
           'uid' => $uid,
           'series' => $token->getSeries(),
           'instance' => $token->getInstance(),
+          'created' => $token->getCreated()->getTimestamp(),
           'expires' => $token->getExpiry()->getTimestamp(),
         ])
         ->execute();

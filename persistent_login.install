@@ -26,11 +26,17 @@ function persistent_login_schema() {
         'not null' => TRUE,
         'description' => 'The single-use value.',
       ],
+      'created' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'The creation timestamp for this series.',
+      ],
       'expires' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'description' => 'The expiration timestamp for this series of tokens.',
+        'description' => 'The expiration timestamp for this series.',
       ],
     ],
     'primary key' => ['series'],
@@ -61,4 +67,21 @@ function persistent_login_requirements($phase) {
   }
 
   return $requirements;
+}
+
+/**
+ * Add created column to database table.
+ */
+function persistent_login_update_8101() {
+  Drupal::database()->schema()->addField(
+    'persistent_login',
+    'created',
+    [
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'initial' => time(),
+      'description' => 'The creation timestamp for this series.',
+    ]
+  );
 }
