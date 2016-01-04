@@ -10,6 +10,7 @@ namespace Drupal\persistent_login\EventSubscriber;
 use DateTime;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Access\CsrfTokenGenerator;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\SessionConfigurationInterface;
@@ -27,6 +28,13 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * @package Drupal\persistent_login
  */
 class TokenManager implements EventSubscriberInterface {
+
+  /**
+   * The config factory.
+   *
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   */
+  protected $configFactory;
 
   /**
    * The database connection.
@@ -68,6 +76,8 @@ class TokenManager implements EventSubscriberInterface {
    *
    * @param \Drupal\Core\Database\Connection $connection
    *   The database connection.
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   *   The config factory.
    * @param \Drupal\Core\Access\CsrfTokenGenerator $csrfToken
    *   The token generator.
    * @param \Drupal\Core\Session\SessionConfigurationInterface $sessionConfiguration
@@ -77,10 +87,12 @@ class TokenManager implements EventSubscriberInterface {
    */
   public function __construct(
     Connection $connection,
+    ConfigFactoryInterface $configFactory,
     CsrfTokenGenerator $csrfToken,
     SessionConfigurationInterface $sessionConfiguration,
     EntityTypeManagerInterface $entityManager
   ) {
+    $this->configFactory = $configFactory;
     $this->connection = $connection;
     $this->csrfToken = $csrfToken;
     $this->sessionConfiguration = $sessionConfiguration;
@@ -254,12 +266,14 @@ class TokenManager implements EventSubscriberInterface {
    */
   public function setNewSessionToken($uid) {
 
+    $config = $this->configFactory->get('persistent_login.settings');
+
     $token = (new PersistentToken(
         $this->csrfToken->get(Crypt::randomBytesBase64()),
         $this->csrfToken->get(Crypt::randomBytesBase64()),
         $uid
       ))
-      ->setExpiry(new DateTime("now +30 day"));
+      ->setExpiry(new DateTime("now +" . $config->get('lifetime') . " day"));
 
     try {
       $this->connection->insert('persistent_login')

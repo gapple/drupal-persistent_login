@@ -1,6 +1,7 @@
 name: Persistent Login
 type: module
 description: Provides a "Remember Me" feature on the login form.
+configure: persistent_login.settings
 core: 8.x
 package: Other
 
