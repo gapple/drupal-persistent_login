@@ -268,12 +268,17 @@ class TokenManager implements EventSubscriberInterface {
 
     $config = $this->configFactory->get('persistent_login.settings');
 
-    $token = (new PersistentToken(
+    $token = new PersistentToken(
         $this->csrfToken->get(Crypt::randomBytesBase64()),
         $this->csrfToken->get(Crypt::randomBytesBase64()),
         $uid
-      ))
-      ->setExpiry(new DateTime("now +" . $config->get('lifetime') . " day"));
+      );
+    if ($config->get('lifetime') === 0) {
+      $token->setExpiry(new DateTime("@" . 2147483647));
+    }
+    else {
+      $token->setExpiry(new DateTime("now +" . $config->get('lifetime') . " day"));
+    }
 
     try {
       $this->connection->insert('persistent_login')
@@ -363,7 +368,6 @@ class TokenManager implements EventSubscriberInterface {
     try {
       $this->connection->delete('persistent_login')
         ->condition('expires', REQUEST_TIME, '<')
-        ->condition('expires', 0, '>')
         ->execute();
     }
     catch (\Exception $e) {
