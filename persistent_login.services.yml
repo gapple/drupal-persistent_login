@@ -1,6 +1,12 @@
 services:
+  logger.channel.persistent_login:
+    parent: logger.channel_base
+    arguments: ['persistent_login']
   persistent_login.token_manager:
-    class: Drupal\persistent_login\EventSubscriber\TokenManager
-    arguments: ['@database', '@config.factory', '@csrf_token', '@session_configuration', '@entity.manager']
+    class: Drupal\persistent_login\TokenManager
+    arguments: ['@database', '@config.factory', '@csrf_token', '@logger.channel.persistent_login']
+  persistent_login.token_handler:
+    class: Drupal\persistent_login\EventSubscriber\TokenHandler
+    arguments: ['@persistent_login.token_manager', '@session_configuration', '@entity.manager']
     tags:
       - { name: event_subscriber }
