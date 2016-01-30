@@ -88,7 +88,7 @@ class TokenManager {
   public function validateToken(PersistentToken $token) {
 
     $selectResult = $this->connection->select('persistent_login', 'pl')
-      ->fields('pl', ['uid', 'created', 'expires'])
+      ->fields('pl', ['uid', 'created', 'refreshed', 'expires'])
       ->condition('expires', REQUEST_TIME, '>')
       ->condition('series', $token->getSeries())
       ->condition('instance', $token->getInstance())
@@ -97,7 +97,8 @@ class TokenManager {
     if (($tokenData = $selectResult->fetchObject())) {
       return $token
         ->setUid($tokenData->uid)
-        ->setCreated(new DateTime(('@' . $tokenData->created)))
+        ->setCreated(new DateTime('@' . $tokenData->created))
+        ->setRefreshed(new DateTime('@' . $tokenData->refreshed))
         ->setExpiry(new DateTime('@' . $tokenData->expires));
     }
     else {
@@ -137,6 +138,7 @@ class TokenManager {
           'series' => $token->getSeries(),
           'instance' => $token->getInstance(),
           'created' => $token->getCreated()->getTimestamp(),
+          'refreshed' => $token->getRefreshed()->getTimestamp(),
           'expires' => $token->getExpiry()->getTimestamp(),
         ])
         ->execute();
@@ -189,7 +191,10 @@ class TokenManager {
 
     try {
       $this->connection->update('persistent_login')
-        ->fields(['instance' => $token->getInstance()])
+        ->fields([
+          'instance' => $token->getInstance(),
+          'refreshed' => $token->getRefreshed()->getTimestamp(),
+        ])
         ->condition('series', $token->getSeries())
         ->condition('instance', $originalInstance)
         ->execute();

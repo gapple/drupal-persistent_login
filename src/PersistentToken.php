@@ -48,6 +48,13 @@ class PersistentToken {
   protected $created;
 
   /**
+   * Refresh time.
+   *
+   * @var \DateTimeInterface
+   */
+  protected $refreshed;
+
+  /**
    * Expiration time.
    *
    * @var \DateTimeInterface
@@ -73,7 +80,7 @@ class PersistentToken {
 
     // Set the default creation date.
     // Existing tokens can update the value afterwards with setCreated().
-    $this->created = new \DateTime();
+    $this->created = $this->refreshed = new \DateTime();
   }
 
   /**
@@ -178,6 +185,8 @@ class PersistentToken {
   /**
    * Update the instance identifier.
    *
+   * This also updates the token's last refresh time.
+   *
    * @param string $instance
    *   The new instance identifier.
    *
@@ -186,7 +195,7 @@ class PersistentToken {
   public function updateInstance($instance) {
     $this->instance = $instance;
 
-    return $this;
+    return $this->setRefreshed(new \DateTime());
   }
 
   /**
@@ -209,6 +218,30 @@ class PersistentToken {
    */
   public function setCreated(\DateTimeInterface $date) {
     $this->created = $date;
+
+    return $this;
+  }
+
+  /**
+   * Get the last refresh time of this token.
+   *
+   * @return \DateTimeInterface
+   *   The last refresh time.
+   */
+  public function getRefreshed() {
+    return $this->refreshed;
+  }
+
+  /**
+   * Set the last refresh time of this token.
+   *
+   * @param \DateTimeInterface $date
+   *   The last refresh time.
+   *
+   * @return $this
+   */
+  public function setRefreshed(\DateTimeInterface $date) {
+    $this->refreshed = $date;
 
     return $this;
   }

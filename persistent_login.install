@@ -32,6 +32,12 @@ function persistent_login_schema() {
         'not null' => TRUE,
         'description' => 'The creation timestamp for this series.',
       ],
+      'refreshed' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'The refresh timestamp for this series.',
+      ],
       'expires' => [
         'type' => 'int',
         'unsigned' => TRUE,
@@ -82,6 +88,23 @@ function persistent_login_update_8101() {
       'not null' => TRUE,
       'initial' => time(),
       'description' => 'The creation timestamp for this series.',
+    ]
+  );
+}
+
+/**
+ * Add refreshed column to database table.
+ */
+function persistent_login_update_8102() {
+  Drupal::database()->schema()->addField(
+    'persistent_login',
+    'refreshed',
+    [
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'initial' => '0',
+      'description' => 'The refresh timestamp for this series.',
     ]
   );
 }
