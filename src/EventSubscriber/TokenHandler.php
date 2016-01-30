@@ -137,11 +137,11 @@ class TokenHandler implements EventSubscriberInterface {
     if ($this->token) {
       $request = $event->getRequest();
       $response = $event->getResponse();
+      $sessionOptions = $this->sessionConfiguration->getOptions($request);
 
       if ($this->token->getStatus() === PersistentToken::STATUS_VALID) {
         // New or updated token.
         $this->token = $this->tokenManager->updateToken($this->token);
-        $sessionOptions = $this->sessionConfiguration->getOptions($request);
         $response->headers->setCookie(
           new Cookie(
             $this->getCookieName($request),
@@ -156,7 +156,12 @@ class TokenHandler implements EventSubscriberInterface {
       elseif ($this->token->getStatus() === PersistentToken::STATUS_INVALID) {
         // Invalid token, or manually cleared token (e.g. user logged out).
         $this->tokenManager->deleteToken($this->token);
-        $response->headers->clearCookie($this->getCookieName($request));
+        $response->headers->clearCookie(
+          $this->getCookieName($request),
+          '/', // TODO Path should probably match the base path.
+          $sessionOptions['cookie_domain'],
+          $sessionOptions['cookie_secure']
+        );
       }
       else {
         // Ignore token if status is STATUS_NOT_VALIDATED.
