@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Installation functions for Persistent Login module.
+ */
+
+/**
  * Implements hook_schema().
  */
 function persistent_login_schema() {
@@ -107,4 +112,13 @@ function persistent_login_update_8102() {
       'description' => 'The refresh timestamp for this series.',
     ]
   );
+}
+
+/**
+ * Add form field label config value.
+ */
+function persistent_login_update_8103() {
+  Drupal::configFactory()->getEditable('persistent_login.settings')
+    ->set('login_form.field_label', 'Remember me')
+    ->save();
 }

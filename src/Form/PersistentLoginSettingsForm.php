@@ -1,4 +1,5 @@
 <?php
+
 namespace Drupal\persistent_login\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
@@ -49,6 +50,13 @@ class PersistentLoginSettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('max_tokens'),
     ];
 
+    $form['field_label'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Form Label'),
+      '#description' => $this->t('The login form field label.'),
+      '#default_value' => $config->get('login_form.field_label'),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -58,10 +66,12 @@ class PersistentLoginSettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
     $this->config('persistent_login.settings')
-      ->set('lifetime', (int) $form_state->getValue('lifetime'))
-      ->set('max_tokens', (int) $form_state->getValue('max_tokens'))
+      ->set('lifetime', $form_state->getValue('lifetime'))
+      ->set('max_tokens', $form_state->getValue('max_tokens'))
+      ->set('login_form.field_label', $form_state->getValue('field_label'))
       ->save();
 
     parent::submitForm($form, $form_state);
   }
+
 }

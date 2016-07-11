@@ -25,7 +25,10 @@ function persistent_login_form_alter(&$form, FormStateInterface $form_state, $fo
 
   $form['persistent_login'] = [
     '#type' => 'checkbox',
-    '#title' => t('Remember me'),
+    '#title' => \Drupal::config('persistent_login.settings')->get('login_form.field_label'),
+    '#cache' => [
+      'tags' => ['config:persistent_login.settings'],
+    ],
   ];
   $form['#submit'][] = 'persistent_login_user_login_form_submit';
 }
