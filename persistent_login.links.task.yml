@@ -1,0 +1,4 @@
+persistent_login.settings:
+  route_name: persistent_login.settings
+  base_route: persistent_login.settings
+  title: 'Persistent Login'
