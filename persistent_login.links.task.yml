@@ -2,3 +2,8 @@ persistent_login.settings:
   route_name: persistent_login.settings
   base_route: persistent_login.settings
   title: 'Persistent Login'
+
+persistent_login.user_tokens_list:
+  route_name: persistent_login.user_tokens_list
+  base_route: entity.user.canonical
+  title: 'Persistent Logins'

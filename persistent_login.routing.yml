@@ -6,3 +6,11 @@ persistent_login.settings:
   requirements:
     _permission: 'administer site configuration'
 
+persistent_login.user_tokens_list:
+  path: 'user/{user}/persistent-logins'
+  defaults:
+    _controller: '\Drupal\persistent_login\Controller\UserController::listTokens'
+    _title: 'Persistent Logins'
+  requirements:
+    _entity_access: 'user.update'
+    user: \d+

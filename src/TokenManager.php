@@ -13,6 +13,7 @@ use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Logger\LoggerChannelInterface;
+use Drupal\user\UserInterface;
 
 /**
  * Class TokenManager.
@@ -241,4 +242,36 @@ class TokenManager {
     }
   }
 
+  /**
+   * Get all active tokens for a user.
+   *
+   * @param \Drupal\user\UserInterface $user
+   *   A user to get active tokens for.
+   *
+   * @return PersistentToken[]
+   *   An array of the active tokens for the provided user.
+   */
+  public function getTokensForUser(UserInterface $user) {
+    $tokens = [];
+
+    try {
+      $tokensResult = $this->connection->select('persistent_login', 'pl')
+        ->fields('pl', ['uid', 'series', 'instance', 'created', 'refreshed', 'expires'])
+        ->condition('uid', $user->id())
+        ->condition('expires', REQUEST_TIME, '>')
+        ->orderBy('created')
+        ->execute();
+
+      while (($tokenArray = $tokensResult->fetchAssoc())) {
+        $tokens[] = PersistentToken::createFromArray($tokenArray);
+      }
+    }
+    catch (\Exception $e) {
+      $this->logger->error('Unable to list tokens for user with uid @uid', [
+        '@uid' => $user->id(),
+      ]);
+    }
+
+    return $tokens;
+  }
 }
