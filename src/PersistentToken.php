@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\persistent_login\PersistentToken.
- */
-
 namespace Drupal\persistent_login;
 
 /**

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\persistent_login\EventSubscriber\TokenHandler.
- */
-
 namespace Drupal\persistent_login\EventSubscriber;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;

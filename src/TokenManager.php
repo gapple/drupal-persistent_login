@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\persistent_login\TokenManager.
- */
-
 namespace Drupal\persistent_login;
 
 use DateTime;

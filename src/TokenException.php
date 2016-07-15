@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\persistent_login\TokenException.
- */
 
 namespace Drupal\persistent_login;
 
