@@ -55,6 +55,7 @@ class PersistentLoginSettingsForm extends ConfigFormBase {
       '#title' => $this->t('Form Label'),
       '#description' => $this->t('The login form field label.'),
       '#default_value' => $config->get('login_form.field_label'),
+      '#required' => TRUE,
     ];
 
     return parent::buildForm($form, $form_state);
