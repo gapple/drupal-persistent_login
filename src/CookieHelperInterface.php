@@ -21,6 +21,17 @@ interface CookieHelperInterface {
   public function getCookieName(Request $request);
 
   /**
+   * Returns the value of the persistent login cookie.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
+   *
+   * @return string
+   *   The cookie value.
+   */
+  public function getCookieValue(Request $request);
+
+  /**
    * Checks if a request contains a persistent login cookie.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request

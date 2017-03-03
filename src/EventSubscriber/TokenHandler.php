@@ -188,7 +188,7 @@ class TokenHandler implements EventSubscriberInterface {
    *   A new PersistentToken object.
    */
   public function getTokenFromCookie(Request $request) {
-    return PersistentToken::createFromString($request->cookies->get($this->cookieHelper->getCookieName($request)));
+    return PersistentToken::createFromString($this->cookieHelper->getCookieValue($request));
   }
 
   /**
@@ -217,4 +217,5 @@ class TokenHandler implements EventSubscriberInterface {
       $this->token = $this->token->setInvalid();
     }
   }
+
 }

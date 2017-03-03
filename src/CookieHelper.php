@@ -32,7 +32,15 @@ class CookieHelper implements CookieHelperInterface {
    */
   public function getCookieName(Request $request) {
     $sessionConfigurationSettings = $this->sessionConfiguration->getOptions($request);
+    // Replace the session cookie 'SESS' prefix.
     return 'PL' . substr($sessionConfigurationSettings['name'], 4);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCookieValue(Request $request) {
+    return $request->cookies->get($this->getCookieName($request));
   }
 
   /**
