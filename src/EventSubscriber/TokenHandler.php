@@ -4,6 +4,7 @@ namespace Drupal\persistent_login\EventSubscriber;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\SessionConfigurationInterface;
+use Drupal\persistent_login\CookieHelperInterface;
 use Drupal\persistent_login\PersistentToken;
 use Drupal\persistent_login\TokenException;
 use Drupal\persistent_login\TokenManager;
@@ -27,6 +28,13 @@ class TokenHandler implements EventSubscriberInterface {
    * @var \Drupal\persistent_login\TokenManager
    */
   protected $tokenManager;
+
+  /**
+   * The cookie helper service.
+   *
+   * @var \Drupal\persistent_login\CookieHelper
+   */
+  protected $cookieHelper;
 
   /**
    * The session configuration.
@@ -54,6 +62,8 @@ class TokenHandler implements EventSubscriberInterface {
    *
    * @param \Drupal\persistent_login\TokenManager $token_manager
    *   The token manager service.
+   * @param \Drupal\persistent_login\CookieHelperInterface $cookie_helper
+   *   The cookie helper service.
    * @param \Drupal\Core\Session\SessionConfigurationInterface $session_configuration
    *   The session configuration.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_manager
@@ -61,10 +71,12 @@ class TokenHandler implements EventSubscriberInterface {
    */
   public function __construct(
     TokenManager $token_manager,
+    CookieHelperInterface $cookie_helper,
     SessionConfigurationInterface $session_configuration,
     EntityTypeManagerInterface $entity_manager
   ) {
     $this->tokenManager = $token_manager;
+    $this->cookieHelper = $cookie_helper;
     $this->sessionConfiguration = $session_configuration;
     $this->entityManager = $entity_manager;
   }
@@ -99,7 +111,7 @@ class TokenHandler implements EventSubscriberInterface {
 
     $request = $event->getRequest();
 
-    if ($this->hasCookie($request)) {
+    if ($this->cookieHelper->hasCookie($request)) {
       $this->token = $this->getTokenFromCookie($request);
 
       // Only validate the token if a user session has not been started.
@@ -139,7 +151,7 @@ class TokenHandler implements EventSubscriberInterface {
         $this->token = $this->tokenManager->updateToken($this->token);
         $response->headers->setCookie(
           new Cookie(
-            $this->getCookieName($request),
+            $this->cookieHelper->getCookieName($request),
             $this->token,
             $this->token->getExpiry(),
             '/',  // TODO Path should probably match the base path.
@@ -147,50 +159,23 @@ class TokenHandler implements EventSubscriberInterface {
             $sessionOptions['cookie_secure']
           )
         );
+        $response->setPrivate();
       }
       elseif ($this->token->getStatus() === PersistentToken::STATUS_INVALID) {
         // Invalid token, or manually cleared token (e.g. user logged out).
         $this->tokenManager->deleteToken($this->token);
         $response->headers->clearCookie(
-          $this->getCookieName($request),
+          $this->cookieHelper->getCookieName($request),
           '/', // TODO Path should probably match the base path.
           $sessionOptions['cookie_domain'],
           $sessionOptions['cookie_secure']
         );
+        $response->setPrivate();
       }
       else {
         // Ignore token if status is STATUS_NOT_VALIDATED.
       }
     }
-  }
-
-  /**
-   * Get the name of the persistent login cookie.
-   *
-   * Value is based on the session cookie name.
-   *
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The request.
-   *
-   * @return string
-   *   The cookie name.
-   */
-  protected function getCookieName(Request $request) {
-    $sessionConfigurationSettings = $this->sessionConfiguration->getOptions($request);
-    return 'PL' . substr($sessionConfigurationSettings['name'], 4);
-  }
-
-  /**
-   * Check if a request contains a persistent login cookie.
-   *
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The request.
-   *
-   * @return bool
-   *   True if the request provides a persistent login cookie.
-   */
-  public function hasCookie(Request $request) {
-    return $request->cookies->has($this->getCookieName($request));
   }
 
   /**
@@ -203,7 +188,7 @@ class TokenHandler implements EventSubscriberInterface {
    *   A new PersistentToken object.
    */
   public function getTokenFromCookie(Request $request) {
-    return PersistentToken::createFromString($request->cookies->get($this->getCookieName($request)));
+    return PersistentToken::createFromString($request->cookies->get($this->cookieHelper->getCookieName($request)));
   }
 
   /**
