@@ -7,8 +7,8 @@ use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\user\UserInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class TokenManager.
@@ -54,14 +54,14 @@ class TokenManager {
    *   The config factory.
    * @param \Drupal\Core\Access\CsrfTokenGenerator $csrfToken
    *   The token generator.
-   * @param \Drupal\Core\Logger\LoggerChannelInterface $logger
+   * @param \Psr\Log\LoggerInterface $logger
    *   The logger channel.
    */
   public function __construct(
     Connection $connection,
     ConfigFactoryInterface $configFactory,
     CsrfTokenGenerator $csrfToken,
-    LoggerChannelInterface $logger
+    LoggerInterface $logger
   ) {
     $this->configFactory = $configFactory;
     $this->connection = $connection;
