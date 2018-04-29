@@ -8,21 +8,16 @@
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Implements hook_form_alter().
+ * Implements hook_form_FORM_ID_alter().
  */
-function persistent_login_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  $alter_form = FALSE;
-  if (substr($form_id, 0, 10) == 'user_login') {
-    $alter_form = TRUE;
-  }
-//  elseif (substr($form_id, 0, 13) == 'user_register') {
-//    $alter_form = TRUE;
-//  }
+function persistent_login_form_user_login_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  _persistent_login_add_form_field($form, $form_state);
+}
 
-  if (!$alter_form) {
-    return;
-  }
-
+/**
+ * Helper function to add persistent login checkbox to a form.
+ */
+function _persistent_login_add_form_field(&$form, FormStateInterface $form_state) {
   $form['persistent_login'] = [
     '#type' => 'checkbox',
     '#title' => \Drupal::config('persistent_login.settings')->get('login_form.field_label'),
