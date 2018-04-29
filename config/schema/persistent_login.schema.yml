@@ -17,3 +17,6 @@ persistent_login.settings:
         field_label:
           type: label
           label: 'The login form field label'
+    cookie_prefix:
+      type: string
+      label: 'Cookie Prefix'

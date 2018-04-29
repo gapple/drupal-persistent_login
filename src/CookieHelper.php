@@ -2,6 +2,7 @@
 
 namespace Drupal\persistent_login;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Session\SessionConfigurationInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -15,25 +16,38 @@ class CookieHelper implements CookieHelperInterface {
    *
    * @var \Drupal\Core\Session\SessionConfigurationInterface
    */
-  protected $sessionConfiguration;
+  private $sessionConfiguration;
+
+  /**
+   * The Config Factory service.
+   *
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   */
+  private $configFactory;
 
   /**
    * Instantiates a new CookieHelper instance.
    *
    * @param \Drupal\Core\Session\SessionConfigurationInterface $session_configuration
    *   The session configuration.
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   *   The Config Factory service.
    */
-  public function __construct(SessionConfigurationInterface $session_configuration) {
+  public function __construct(SessionConfigurationInterface $session_configuration, ConfigFactoryInterface $configFactory) {
     $this->sessionConfiguration = $session_configuration;
+    $this->configFactory = $configFactory;
   }
 
   /**
    * {@inheritdoc}
    */
   public function getCookieName(Request $request) {
+    $prefix = $this->configFactory
+      ->get('persistent_login.settings')
+      ->get('cookie_prefix');
     $sessionConfigurationSettings = $this->sessionConfiguration->getOptions($request);
     // Replace the session cookie 'SESS' prefix.
-    return 'PL' . substr($sessionConfigurationSettings['name'], 4);
+    return $prefix . substr($sessionConfigurationSettings['name'], 4);
   }
 
   /**

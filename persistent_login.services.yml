@@ -4,7 +4,7 @@ services:
     arguments: ['persistent_login']
   persistent_login.cookie_helper:
     class: Drupal\persistent_login\CookieHelper
-    arguments: ['@session_configuration']
+    arguments: ['@session_configuration', '@config.factory']
   persistent_login.token_manager:
     class: Drupal\persistent_login\TokenManager
     arguments: ['@database', '@config.factory', '@csrf_token', '@logger.channel.persistent_login']

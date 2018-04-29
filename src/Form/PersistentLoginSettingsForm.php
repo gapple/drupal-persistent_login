@@ -58,18 +58,44 @@ class PersistentLoginSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
     ];
 
+    $form['cookie_prefix'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Cookie Prefix'),
+      '#description' => $this->t('A prefix for the persistent login cookie name. Allowed characters are: ASCII letters ([A-Z], [a-z]), digits ([0-9]), hyphens ("-") or underscores ("_").  All users will be required to login if this value is changed.'),
+      '#default_value' => $config->get('cookie_prefix'),
+      '#required' => TRUE,
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    if (!preg_match('/^[-_a-z0-9]+$/i', $form_state->getValue('cookie_prefix'))) {
+      $form_state->setErrorByName(
+        'cookie_prefix',
+        $this->t('Invalid characters in cookie prefix')
+      );
+    }
+    elseif ($form_state->getValue('cookie_prefix') == 'SESS') {
+      $form_state->setErrorByName(
+        'cookie_prefix',
+        $this->t('Cookie prefix cannot be "SESS" because it is used by the Drupal session cookie.')
+      );
+    }
+  }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->config('persistent_login.settings')
       ->set('lifetime', $form_state->getValue('lifetime'))
       ->set('max_tokens', $form_state->getValue('max_tokens'))
       ->set('login_form.field_label', $form_state->getValue('field_label'))
+      ->set('cookie_prefix', $form_state->getValue('cookie_prefix'))
       ->save();
 
     parent::submitForm($form, $form_state);

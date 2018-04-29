@@ -122,3 +122,12 @@ function persistent_login_update_8103() {
     ->set('login_form.field_label', 'Remember me')
     ->save();
 }
+
+/**
+ * Add default value for cookie_prefix to config.
+ */
+function persistent_login_update_8104() {
+  Drupal::configFactory()->getEditable('persistent_login.settings')
+    ->set('cookie_prefix', 'PL')
+    ->save();
+}
