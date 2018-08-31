@@ -532,7 +532,7 @@ function _persistent_login_create_cookie($acct, $edit = array()) {
  */
 function _persistent_login_setcookie($name, $value, $expire = 0) {
   $params = session_get_cookie_params();
-  setcookie($name, $value, $expire, $params['path'], $params['domain'], $params['secure']);
+  setcookie($name, $value, $expire, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
 }
 
 /**
