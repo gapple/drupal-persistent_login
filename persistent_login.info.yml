@@ -5,3 +5,5 @@ configure: persistent_login.settings
 core: 8.x
 package: Other
 
+dependencies:
+  - drupal:system (>= 8.3)

@@ -3,6 +3,7 @@
 namespace Drupal\persistent_login;
 
 use DateTime;
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -46,6 +47,13 @@ class TokenManager {
   protected $logger;
 
   /**
+   * The Time service.
+   *
+   * @var \Drupal\Component\Datetime\TimeInterface
+   */
+  protected $time;
+
+  /**
    * Construct a token manager object.
    *
    * @param \Drupal\Core\Database\Connection $connection
@@ -56,17 +64,21 @@ class TokenManager {
    *   The token generator.
    * @param \Psr\Log\LoggerInterface $logger
    *   The logger channel.
+   * @param \Drupal\Component\Datetime\TimeInterface $time
+   *   The time service.
    */
   public function __construct(
     Connection $connection,
     ConfigFactoryInterface $configFactory,
     CsrfTokenGenerator $csrfToken,
-    LoggerInterface $logger
+    LoggerInterface $logger,
+    TimeInterface $time
   ) {
     $this->configFactory = $configFactory;
     $this->connection = $connection;
     $this->csrfToken = $csrfToken;
     $this->logger = $logger;
+    $this->time = $time;
   }
 
   /**
@@ -85,7 +97,7 @@ class TokenManager {
 
     $selectResult = $this->connection->select('persistent_login', 'pl')
       ->fields('pl', ['uid', 'created', 'refreshed', 'expires'])
-      ->condition('expires', REQUEST_TIME, '>')
+      ->condition('expires', $this->time->getRequestTime(), '>')
       ->condition('series', $token->getSeries())
       ->condition('instance', $token->getInstance())
       ->execute();
@@ -229,7 +241,7 @@ class TokenManager {
   public function cleanupExpiredTokens() {
     try {
       $this->connection->delete('persistent_login')
-        ->condition('expires', REQUEST_TIME, '<')
+        ->condition('expires', $this->time->getRequestTime(), '<')
         ->execute();
     }
     catch (\Exception $e) {
@@ -253,7 +265,7 @@ class TokenManager {
       $tokensResult = $this->connection->select('persistent_login', 'pl')
         ->fields('pl', ['uid', 'series', 'instance', 'created', 'refreshed', 'expires'])
         ->condition('uid', $user->id())
-        ->condition('expires', REQUEST_TIME, '>')
+        ->condition('expires', $this->time->getRequestTime(), '>')
         ->orderBy('created')
         ->execute();
 
@@ -269,4 +281,5 @@ class TokenManager {
 
     return $tokens;
   }
+
 }

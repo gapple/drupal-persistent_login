@@ -7,7 +7,7 @@ services:
     arguments: ['@session_configuration', '@config.factory']
   persistent_login.token_manager:
     class: Drupal\persistent_login\TokenManager
-    arguments: ['@database', '@config.factory', '@csrf_token', '@logger.channel.persistent_login']
+    arguments: ['@database', '@config.factory', '@csrf_token', '@logger.channel.persistent_login', '@datetime.time']
   persistent_login.token_handler:
     class: Drupal\persistent_login\EventSubscriber\TokenHandler
     arguments: ['@persistent_login.token_manager', '@persistent_login.cookie_helper', '@session_configuration', '@entity.manager']
