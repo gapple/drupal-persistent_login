@@ -61,7 +61,9 @@ class PersistentLoginSettingsForm extends ConfigFormBase {
     $form['cookie_prefix'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Cookie Prefix'),
-      '#description' => $this->t('A prefix for the persistent login cookie name. Allowed characters are: ASCII letters ([A-Z], [a-z]), digits ([0-9]), hyphens ("-") or underscores ("_").  All users will be required to login if this value is changed.'),
+      '#description' => $this->t(
+        'A prefix for the persistent login cookie name. <br>Allowed characters are: ASCII letters ([A-Z], [a-z]), digits ([0-9]), hyphens ("-") or underscores ("_"). <br>This value will be prepended with \'S\' when the site is accessed over HTTPS to prevent a cookie collision. <br>All users will be required to login if this value is changed.'
+      ),
       '#default_value' => $config->get('cookie_prefix'),
       '#required' => TRUE,
     ];
@@ -79,7 +81,7 @@ class PersistentLoginSettingsForm extends ConfigFormBase {
         $this->t('Invalid characters in cookie prefix')
       );
     }
-    elseif ($form_state->getValue('cookie_prefix') == 'SESS') {
+    elseif (preg_match('/^S?SESS$/', $form_state->getValue('cookie_prefix'))) {
       $form_state->setErrorByName(
         'cookie_prefix',
         $this->t('Cookie prefix cannot be "SESS" because it is used by the Drupal session cookie.')

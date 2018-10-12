@@ -45,9 +45,19 @@ class CookieHelper implements CookieHelperInterface {
     $prefix = $this->configFactory
       ->get('persistent_login.settings')
       ->get('cookie_prefix');
+
+    // Use different session identifiers for HTTPS and HTTP to prevent a cookie
+    // collision.
+    // @see \Drupal\Core\Session\SessionConfiguration::getName()
+    if ($request->isSecure()) {
+      $prefix = 'S' . $prefix;
+    }
+
     $sessionConfigurationSettings = $this->sessionConfiguration->getOptions($request);
-    // Replace the session cookie 'SESS' prefix.
-    return $prefix . substr($sessionConfigurationSettings['name'], 4);
+    // Replace the session cookie prefix.
+    $session_name = preg_replace('/^S?SESS/', '', $sessionConfigurationSettings['name']);
+
+    return $prefix . $session_name;
   }
 
   /**
