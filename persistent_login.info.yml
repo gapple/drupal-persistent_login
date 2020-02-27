@@ -3,6 +3,7 @@ type: module
 description: Provides a "Remember Me" feature on the login form.
 configure: persistent_login.settings
 core: 8.x
+core_version_requirement: ^8 || ^9
 package: Other
 
 dependencies:

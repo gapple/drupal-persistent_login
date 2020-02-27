@@ -11,6 +11,6 @@
     "source": "http://cgit.drupalcode.org/persistent_login"
   },
   "require": {
-    "drupal/core" : "^8.3"
+    "drupal/core" : "^8.3 || ^9.0"
   }
 }
