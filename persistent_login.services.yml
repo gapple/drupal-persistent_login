@@ -10,7 +10,7 @@ services:
     arguments: ['@database', '@config.factory', '@csrf_token', '@logger.channel.persistent_login', '@datetime.time']
   persistent_login.token_handler:
     class: Drupal\persistent_login\EventSubscriber\TokenHandler
-    arguments: ['@persistent_login.token_manager', '@persistent_login.cookie_helper', '@session_configuration', '@entity.manager']
+    arguments: ['@persistent_login.token_manager', '@persistent_login.cookie_helper', '@session_configuration', '@entity_type.manager']
     tags:
       - { name: event_subscriber }
   persistent_login.page_cache_request_policy.pending_persistent_login:

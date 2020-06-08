@@ -2,6 +2,7 @@
 
 namespace Drupal\persistent_login\EventSubscriber;
 
+use Drupal\Component\Plugin\Exception\PluginException;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\SessionConfigurationInterface;
 use Drupal\persistent_login\CookieHelperInterface;
@@ -44,16 +45,16 @@ class TokenHandler implements EventSubscriberInterface {
   protected $sessionConfiguration;
 
   /**
-   * The entity manager.
+   * The Entity Type Manager service.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
    * The persistent token of the current request.
    *
-   * @var PersistentToken
+   * @var \Drupal\persistent_login\PersistentToken
    */
   protected $token;
 
@@ -66,19 +67,19 @@ class TokenHandler implements EventSubscriberInterface {
    *   The cookie helper service.
    * @param \Drupal\Core\Session\SessionConfigurationInterface $session_configuration
    *   The session configuration.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity manager service.
    */
   public function __construct(
     TokenManager $token_manager,
     CookieHelperInterface $cookie_helper,
     SessionConfigurationInterface $session_configuration,
-    EntityTypeManagerInterface $entity_manager
+    EntityTypeManagerInterface $entity_type_manager
   ) {
     $this->tokenManager = $token_manager;
     $this->cookieHelper = $cookie_helper;
     $this->sessionConfiguration = $session_configuration;
-    $this->entityManager = $entity_manager;
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -119,11 +120,15 @@ class TokenHandler implements EventSubscriberInterface {
         $this->token = $this->tokenManager->validateToken($this->token);
 
         if ($this->token->getStatus() === PersistentToken::STATUS_VALID) {
-          // TODO make sure we are starting the user session properly.
-          /** @var \Drupal\User\UserInterface $user */
-          $user = $this->entityManager->getStorage('user')
-            ->load($this->token->getUid());
-          user_login_finalize($user);
+          try {
+            // TODO make sure we are starting the user session properly.
+            /** @var \Drupal\User\UserInterface $user */
+            $user = $this->entityTypeManager->getStorage('user')
+              ->load($this->token->getUid());
+            user_login_finalize($user);
+          }
+          catch (PluginException $e) {
+          }
         }
       }
     }
