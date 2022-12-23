@@ -19,14 +19,21 @@ class PersistentLoginTest extends BrowserTestBase {
   protected $user;
 
   /**
-   * {@inheritdoc}
+   * Set default theme to stark.
+   *
+   * @var string
    */
-  public static $modules = ['persistent_login'];
+  protected $defaultTheme = 'stark';
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected static $modules = ['persistent_login'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     // Mimic the required setup of the module by setting the session cookie

@@ -12,8 +12,8 @@ use Drupal\persistent_login\TokenManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
@@ -101,12 +101,12 @@ class TokenHandler implements EventSubscriberInterface {
   /**
    * Load a token on this request, if a persistent cookie is provided.
    *
-   * @param \Symfony\Component\HttpKernel\Event\GetResponseEvent $event
+   * @param \Symfony\Component\HttpKernel\Event\RequestEvent $event
    *   The request event.
    */
-  public function loadTokenOnRequestEvent(GetResponseEvent $event) {
+  public function loadTokenOnRequestEvent(RequestEvent $event) {
 
-    if (!$event->isMasterRequest()) {
+    if (!$event->isMainRequest()) {
       return;
     }
 
@@ -121,7 +121,7 @@ class TokenHandler implements EventSubscriberInterface {
 
         if ($this->token->getStatus() === PersistentToken::STATUS_VALID) {
           try {
-            // TODO make sure we are starting the user session properly.
+            // @todo make sure we are starting the user session properly.
             /** @var \Drupal\User\UserInterface $user */
             $user = $this->entityTypeManager->getStorage('user')
               ->load($this->token->getUid());
@@ -137,12 +137,12 @@ class TokenHandler implements EventSubscriberInterface {
   /**
    * Set or clear a token cookie on this response, if required.
    *
-   * @param \Symfony\Component\HttpKernel\Event\FilterResponseEvent $event
+   * @param \Symfony\Component\HttpKernel\Event\ResponseEvent $event
    *   The response event.
    */
-  public function setTokenOnResponseEvent(FilterResponseEvent $event) {
+  public function setTokenOnResponseEvent(ResponseEvent $event) {
 
-    if (!$event->isMasterRequest()) {
+    if (!$event->isMainRequest()) {
       return;
     }
 
@@ -155,11 +155,11 @@ class TokenHandler implements EventSubscriberInterface {
         // New or updated token.
         $this->token = $this->tokenManager->updateToken($this->token);
         $response->headers->setCookie(
-          new Cookie(
+          Cookie::create(
             $this->cookieHelper->getCookieName($request),
             $this->token,
             $this->token->getExpiry(),
-            '/',  // TODO Path should probably match the base path.
+            '/', // @todo Path should probably match the base path.
             $sessionOptions['cookie_domain'],
             $sessionOptions['cookie_secure']
           )
@@ -171,7 +171,7 @@ class TokenHandler implements EventSubscriberInterface {
         $this->tokenManager->deleteToken($this->token);
         $response->headers->clearCookie(
           $this->cookieHelper->getCookieName($request),
-          '/', // TODO Path should probably match the base path.
+          '/', // @todo Path should probably match the base path.
           $sessionOptions['cookie_domain'],
           $sessionOptions['cookie_secure']
         );

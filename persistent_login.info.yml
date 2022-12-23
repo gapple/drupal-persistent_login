@@ -2,9 +2,5 @@ name: Persistent Login
 type: module
 description: Provides a "Remember Me" feature on the login form.
 configure: persistent_login.settings
-core: 8.x
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^9.2 || ^10
 package: Other
-
-dependencies:
-  - drupal:system (>= 8.3)
